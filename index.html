@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杨铮瑞 - Life Explorer & Creator</title>
+    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --grid-x: 0px; --grid-y: 0px;
+            --planet-x: 0px; --planet-y: 0px;
+            --star-x: 0px; --star-y: 0px;
+            --accent-gold: #d4af37;
+            --dynamic-glow: #d4af37; 
+            --modal-glow: #d4af37;
+            --text-main: #FDF5E6; 
+            --text-muted: #E0E0E0; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; /* 强制全局隐藏原生光标，解决弹窗内光标重叠bug */ }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+            background: #000; 
+            color: var(--text-muted);
+            line-height: 1.8;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+            touch-action: pan-y; 
+        }
+
+        /* --- 创世序幕 --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100000;
+            display: flex; align-items: center; justify-content: center; transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s;
+        }
+        .singularity { width: 4px; height: 4px; background: var(--accent-gold); border-radius: 50%; box-shadow: 0 0 20px 2px var(--accent-gold); animation: singularity-pulse 1.5s infinite alternate; }
+        @keyframes singularity-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(2.5); opacity: 1; box-shadow: 0 0 40px 10px var(--accent-gold); } }
+        body.loaded #preloader { opacity: 0; visibility: hidden; }
+
+        /* --- 环境氛围 --- */
+        #nebula-base { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 85% 15%, #15110e 0%, #060811 50%, #010203 100%); z-index: -2; opacity: 0; transition: opacity 1.5s ease; }
+        body.loaded #nebula-base { opacity: 1; }
+
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E'); opacity: 0.04; z-index: 0; pointer-events: none; mix-blend-mode: overlay; }
+
+        #nebula-ambient { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 30%, rgba(100, 150, 255, 0.035) 0%, transparent 45%), radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.025) 0%, transparent 55%); z-index: 0; pointer-events: none; animation: ambient-emotion 90s infinite alternate ease-in-out; opacity: 0; transition: opacity 1.5s ease; }
+        body.loaded #nebula-ambient { opacity: 1; }
+        @keyframes ambient-emotion { 0% { filter: hue-rotate(0deg) brightness(0.9); } 50% { filter: hue-rotate(-30deg) brightness(1.1); } 100% { filter: hue-rotate(-60deg) brightness(1.0); } }
+
+        #nebula-balance { position: fixed; bottom: -20%; left: -10%; width: 1000px; height: 1000px; background: radial-gradient(circle, rgba(135, 206, 250, 0.04) 0%, rgba(138, 43, 226, 0.015) 40%, transparent 70%); filter: blur(60px); z-index: 0; pointer-events: none; transform-origin: center; animation: nebula-flow-emotion 60s infinite alternate ease-in-out; opacity: 0; transition: opacity 2s ease; }
+        body.loaded #nebula-balance { opacity: 1; }
+        @keyframes nebula-flow-emotion { 0% { transform: scale(1) rotate(0deg); filter: blur(60px) hue-rotate(0deg); } 100% { transform: scale(1.2) rotate(45deg); filter: blur(60px) hue-rotate(-70deg); } }
+
+        /* --- 天体系统 --- */
+        #starfield { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; opacity: 1; will-change: transform; }
+        #meteor-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        .meteor { position: absolute; height: 1.5px; background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(135,206,250,0.8) 15%, transparent 100%); border-radius: 2px; filter: drop-shadow(0 0 4px rgba(255,255,255,0.9)); opacity: 0; width: var(--l); animation: meteor-swipe var(--t) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; will-change: transform, opacity; }
+        @keyframes meteor-swipe { 0% { transform: translate(var(--sx), var(--sy)) rotate(var(--d)); opacity: 0; } 10% { opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--ex), var(--ey)) rotate(var(--d)); opacity: 0; } }
+
+        /* 木星 */
+        .jupiter-container { position: fixed; top: -5%; right: -5%; width: 700px; height: 700px; z-index: 1; pointer-events: none; display: flex; align-items: center; justify-content: center; transform: translate(var(--planet-x), var(--planet-y)); filter: blur(1.2px) drop-shadow(0 0 60px rgba(180, 120, 80, 0.15)); will-change: transform; opacity: 0; transition: opacity 2s ease 0.5s; }
+        body.loaded .jupiter-container { opacity: 1; }
+        .jupiter-wrapper { position: relative; width: 600px; height: 600px; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; transform: rotateX(72deg) rotateY(-15deg); animation: jupiter-tilt 20s infinite alternate ease-in-out; }
+        .captured-orbitals { position: absolute; width: 100%; height: 100%; border-radius: 50%; z-index: 1; transform: rotateZ(var(--rz)); }
+        .orbital-particle { position: absolute; top: 50%; left: 50%; width: var(--s); height: var(--s); background: var(--c); border-radius: 50%; box-shadow: 0 0 5px 1px var(--c); animation: particle-orbit var(--t) infinite linear; transform-origin: 0 0; will-change: transform; }
+        @keyframes particle-orbit { 0% { transform: rotate(0deg) translateX(var(--r)); } 100% { transform: rotate(360deg) translateX(var(--r)); } }
+        .jupiter-body { position: absolute; width: 280px; height: 280px; border-radius: 50%; transform: rotateY(15deg) rotateX(-72deg) rotateZ(10deg); z-index: 2; background: #d4c1ad; -webkit-mask-image: radial-gradient(circle closest-side, black 95%, transparent 100%); mask-image: radial-gradient(circle closest-side, black 95%, transparent 100%); overflow: hidden; box-shadow: inset -50px -50px 80px rgba(0,0,0,0.95), inset 15px 15px 30px rgba(255, 240, 220, 0.6), inset 0 0 40px rgba(180, 140, 100, 0.4); }
+        .jupiter-texture { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 65% 55%, rgba(133, 75, 50, 0.8) 0%, rgba(107, 62, 42, 0.6) 15%, transparent 30%), repeating-linear-gradient(0deg, rgba(107, 76, 58, 0.6) 0%, rgba(156, 122, 92, 0.4) 8%, rgba(212, 193, 173, 0.5) 18%, rgba(133, 97, 66, 0.7) 28%, rgba(84, 58, 41, 0.6) 40%); filter: url(#jupiter-clouds) blur(1px); mix-blend-mode: multiply; animation: cloud-flow 60s linear infinite; }
+        .ring-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, transparent 52%, rgba(220, 200, 180, 0.05) 53%, rgba(240, 220, 200, 0.4) 55%, rgba(200, 180, 150, 0.25) 59%, transparent 61%, rgba(180, 160, 140, 0.35) 63%, rgba(160, 140, 120, 0.1) 68%, rgba(150, 130, 110, 0.02) 72%, transparent 75%); animation: ring-spin 30s linear infinite; }
+        .ring-back { clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%); transform: translateZ(-1px); z-index: 1; }
+        .ring-front { clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%); transform: translateZ(1px); z-index: 4; }
+
+        /* --- 智能光标与微距尘埃 (光标绝对置顶 999999) --- */
+        #cursor-singularity { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; z-index: 999999; transform: translate(-50%, -50%); transition: transform 0.1s linear; }
+        #cursor-singularity .focus-core { position: absolute; top: 0; left: 0; width: 6px; height: 6px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.8), 0 0 18px 4px var(--dynamic-glow); transform: translate(-50%, -50%); transition: width 0.2s ease, height 0.2s ease, transform 0.2s ease, box-shadow 0.4s ease; }
+        #cursor-singularity .radiating-ring { position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, box-shadow 0.3s; }
+        .normal-orbit { position: absolute; top: 0; left: 0; width: 0; height: 0; animation: orbit-spin 4s linear infinite; transition: opacity 0.3s ease; }
+        .orbit-star { position: absolute; top: 0; left: 0; width: var(--s); height: var(--s); background: var(--c); border-radius: 50%; box-shadow: 0 0 4px 1px var(--c); transform: translate(-50%, -50%) rotate(var(--d)) translateX(var(--r)); }
+        @keyframes orbit-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #cursor-singularity.hover-mode .focus-core { width: 45px; height: 45px; background: rgba(255,255,255,0.05); border: 1px solid var(--dynamic-glow); box-shadow: 0 0 15px var(--dynamic-glow), inset 0 0 10px var(--dynamic-glow); }
+        #cursor-singularity.hover-mode .normal-orbit { opacity: 0; }
+        #cursor-singularity.hover-mode .radiating-ring { transform: translate(-50%, -50%) translate(var(--hx), var(--hy)); box-shadow: 0 0 5px 1px var(--dynamic-glow); background: var(--dynamic-glow); }
+        
+        #cosmic-dust { position: fixed; top: 0; left: 0; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, var(--dynamic-glow) 30%, transparent 70%); mask-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)"/%3E%3C/svg%3E'); -webkit-mask-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)"/%3E%3C/svg%3E'); border-radius: 50%; pointer-events: none; z-index: 999998; transform: translate(-50%, -50%); mix-blend-mode: screen; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease; opacity: 0; }
+        body.loaded #cosmic-dust { opacity: 0.6; }
+
+        #trail-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999997; }
+        .trail-dot { position: absolute; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; will-change: transform; transform: translate(-50%, -50%); transition: background 0.4s, box-shadow 0.4s; }
+        #glow { position: fixed; top: 0; left: 0; width: 400px; height: 400px; background: radial-gradient(circle, rgba(100, 150, 255, 0.04) 0%, rgba(212, 175, 55, 0.02) 40%, transparent 60%); border-radius: 50%; pointer-events: none; z-index: 2; transform: translate(-50%, -50%); will-change: transform; }
+
+        /* --- 页面主体 --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 10rem 2rem; position: relative; z-index: 10; opacity: 0; transform: translateY(30px); transition: opacity 1.5s ease 0.5s, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s; perspective: 1200px; }
+        body.loaded .container { opacity: 1; transform: translateY(0); }
+        
+        /* 跃迁时底层的 Dolly Zoom */
+        body.modal-open .container { transform: scale(0.9) translateZ(-150px); filter: blur(8px); opacity: 0.2; pointer-events: none; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease, opacity 0.6s ease; }
+
+        header { margin-bottom: 8rem; }
+        h1 { font-family: 'LXGW WenKai', serif; font-size: 5.5rem; font-weight: 700; letter-spacing: 4px; margin-bottom: 0.5rem; }
+        .fluid-char { display: inline-block; color: var(--text-main); text-shadow: 2px 4px 10px rgba(0,0,0,0.9), 0 0 20px rgba(253, 245, 230, 0.2); transition: transform 0.1s linear, color 0.3s ease, text-shadow 0.3s ease; pointer-events: none; }
+        .subtitle { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.15rem; color: var(--accent-gold); letter-spacing: 8px; text-transform: uppercase; font-weight: 600; opacity: 0.9; }
+
+        .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(180px, auto); gap: 2rem; margin-bottom: 8rem; transform: translate(var(--grid-x), var(--grid-y)); will-change: transform; }
+
+        .bento-card {
+            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%);
+            background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)" opacity="0.03"/%3E%3C/svg%3E');
+            border-radius: 24px; padding: 3.2rem; display: flex; flex-direction: column; position: relative; overflow: hidden;
+            box-shadow: -10px 20px 30px rgba(5, 5, 10, 0.5), inset 1px 1px 2px rgba(255, 255, 255, 0.15), inset -1px -1px 3px rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(255,255,255,0.05); transition: transform 0.1s linear, backdrop-filter 0.4s ease, background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease; transform-style: preserve-3d; will-change: transform;
+        }
+        .bento-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 100%); z-index: -1; pointer-events: none; border-radius: inherit; }
+        .bento-card::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, var(--dynamic-glow), transparent); transform: skewX(-25deg); transition: none; z-index: 10; pointer-events: none; opacity: 0; mix-blend-mode: overlay; }
+        .card-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.12) 0%, transparent 60%); pointer-events: none; opacity: 0; transition: opacity 0.4s; z-index: 5; }
+        
+        .bento-card:hover .card-glare { opacity: 1; }
+        .bento-card:hover { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(45px) saturate(180%); box-shadow: -15px 30px 50px rgba(0, 0, 0, 0.8), inset 1px 1px 3px var(--dynamic-glow), inset -1px -1px 4px rgba(0, 0, 0, 0.5); border-color: rgba(255, 255, 255, 0.1); z-index: 10; }
+        .bento-card:hover::after { animation: card-shimmer 1.2s ease-in-out forwards; opacity: 0.5; }
+        @keyframes card-shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+
+        .magnetic-wrap { display: inline-block; transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1); } /* 微调磁吸过渡，更加沉稳 */
+        
+        .card-large { grid-column: span 2; grid-row: span 2; } .card-wide { grid-column: span 2; } .card-square { grid-column: span 1; grid-row: span 1; justify-content: center; align-items: center; text-align: center; padding: 2.5rem;}
+        
+        .card-tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 2rem; font-weight: 600; opacity: 0.9; transition: color 0.4s ease;}
+        .bento-card:hover .card-tag { color: var(--dynamic-glow); }
+        .bento-card h3 { font-family: 'LXGW WenKai', serif; font-size: 2.4rem; margin-bottom: 1.5rem; color: var(--text-main); font-weight: 700; line-height: 1.3; text-shadow: 0 2px 5px rgba(0,0,0,0.8); letter-spacing: 1px;}
+        .bento-card p { color: var(--text-muted); font-size: 1.05rem; flex-grow: 1; font-weight: 400; letter-spacing: 0.05rem; line-height: 2.0; text-shadow: 0 1px 3px rgba(0,0,0,1); }
+        
+        .pill-container { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; margin-bottom: 2rem;}
+        .pill { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; padding: 8px 18px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.15); border-radius: 30px; font-size: 0.9rem; color: #fff; letter-spacing: 1px; backdrop-filter: blur(10px); display: flex; align-items: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-weight: 600; box-shadow: 2px 4px 10px rgba(0,0,0,0.2); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s; }
+        .pill:hover { background: rgba(255,255,255,0.05); border-color: var(--dynamic-glow); box-shadow: 0 6px 15px rgba(0,0,0,0.4); color: var(--dynamic-glow); }
+        
+        .card-icon { width: 65px; height: 65px; border-radius: 20px; background: linear-gradient(135deg, #d4af37 0%, #856142 100%); display:flex; align-items:center; justify-content:center; font-size: 1.8rem; margin-bottom: 1.8rem; box-shadow: 0 8px 20px rgba(212,175,55,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+        .profile-avatar { background: linear-gradient(135deg, #222, #000); border-radius: 50%; box-shadow: 0 8px 20px rgba(0,0,0,0.5); font-size: 0.9rem; color: #888; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 1px;}
+        .social-icon { width: 55px; height: 55px; margin-bottom: 1.5rem; border-radius: 16px; background: linear-gradient(135deg, #d4af37, #856142); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.8rem; font-weight: bold; box-shadow: 0 8px 20px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);}
+        
+        .card-square h4 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.25rem; color: #fff; font-weight: 600; margin-bottom: 0.5rem;}
+        .card-square p { font-size: 0.9rem; color: #aaa; text-shadow: none; letter-spacing: 0;}
+        .btn-follow { font-family: 'Plus Jakarta Sans', sans-serif; margin-top: 1.5rem; padding: 10px 26px; background: var(--accent-gold); color: #000; border-radius: 24px; font-size: 0.9rem; font-weight: 700; text-decoration: none; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 15px rgba(212,175,55,0.4); pointer-events: auto;}
+        .btn-follow:hover { background: #fff; }
+        
+        .media-placeholder { 
+            width: 100%; height: 180px; background: rgba(0, 0, 0, 0.4); border-radius: 16px; margin-top: 2rem; 
+            display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-weight: 400; letter-spacing: 0.15rem; box-shadow: inset 0 10px 20px rgba(0,0,0,0.5); overflow: hidden; 
+            filter: grayscale(80%) sepia(20%) brightness(0.7); transition: filter 0.5s ease, box-shadow 0.5s ease;
+            position: relative;
+        }
+        .media-placeholder::after { content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 25%; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.15), transparent); animation: radar-scan 3s infinite linear; pointer-events: none; }
+        @keyframes radar-scan { 0% { top: -50%; opacity: 0;} 20% { opacity: 1; } 80% { opacity: 1;} 100% { top: 150%; opacity: 0;} }
+
+        .bento-card:hover .media-placeholder { filter: grayscale(0%) sepia(0%) brightness(1); box-shadow: inset 0 5px 10px rgba(0,0,0,0.3); border-color: rgba(255, 255, 255, 0.15); }
+        .card-large .media-placeholder { height: 240px; }
+
+        /* --- 修复与重构：全息数据舱弹窗 --- */
+        /* 修改 display 配合 visibility 以实现丝滑淡入淡出 */
+        .modal { 
+            visibility: hidden; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(30px) saturate(150%); z-index: 99990; 
+            display: flex; align-items: center; justify-content: center; padding: 2rem; 
+            opacity: 0; transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s; 
+            pointer-events: none;
+        }
+        .modal.show { visibility: visible; opacity: 1; pointer-events: auto; }
+        
+        .modal-content { 
+            background: rgba(15, 15, 20, 0.6); backdrop-filter: blur(40px) saturate(150%); -webkit-backdrop-filter: blur(40px) saturate(150%);
+            border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); width: 100%; max-width: 900px; padding: 5rem 4rem; position: relative; 
+            box-shadow: -20px 40px 80px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.05), 0 0 80px -20px var(--modal-glow); 
+            overflow: hidden;
+            /* 弹窗内容滑入 */
+            transform: translateY(30px) scale(0.95); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal.show .modal-content { transform: translateY(0) scale(1); }
+
+        .modal-content::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 30px 30px; opacity: 0.5; pointer-events: none; z-index: -1;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%); -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        }
+        .modal-content::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; 
+            background: linear-gradient(to right, transparent, var(--modal-glow), transparent); 
+            transform: skewX(-25deg); animation: modal-shimmer 4s infinite; pointer-events: none; z-index: 10; opacity: 0.15; mix-blend-mode: overlay;
+        }
+        @keyframes modal-shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+
+        .close-btn { position: absolute; top: 1.5rem; right: 2rem; font-size: 2.5rem; color: var(--text-muted); cursor: none; transition: color 0.3s; z-index: 20;}
+        .close-btn:hover { color: var(--modal-glow); }
+
+        #modal-media {
+            min-height: 350px; background: rgba(0,0,0,0.6); border-radius: 16px; display: flex; align-items: center; justify-content: center; 
+            border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; box-shadow: inset 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .holo-scanner {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 40%, var(--modal-glow) 50%, transparent 60%);
+            background-size: 100% 200%; animation: holo-scan 2.5s infinite linear; opacity: 0.2; pointer-events: none;
+        }
+        @keyframes holo-scan { 0% { background-position: 0 -100%; } 100% { background-position: 0 200%; } }
+
+        @keyframes jupiter-tilt { 0% { transform: rotateX(72deg) rotateY(-15deg); } 100% { transform: rotateX(68deg) rotateY(-12deg); } }
+        @keyframes ring-spin { 0% { transform: rotateZ(0deg); } 100% { transform: rotateZ(360deg); } }
+        @keyframes cloud-flow { 0% { background-position: 0 0; } 100% { background-position: -100px 0; } }
+
+        @media (max-width: 1024px) { .bento-grid { grid-template-columns: repeat(2, 1fr); } .card-large, .card-wide { grid-column: span 2; } h1 { font-size: 4.5rem;} }
+        @media (max-width: 600px) { .container{padding: 5rem 1.5rem;} .bento-card { padding: 2.5rem; } .bento-grid { grid-template-columns: 1fr; } .card-square { grid-column: span 1; } h1{font-size: 3.5rem;} .jupiter-container{transform: scale(0.6); right:-20%;} }
+    </style>
+</head>
+<body>
+
+    <div id="preloader"><div class="singularity"></div></div>
+
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+        <filter id="jupiter-clouds"><feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="4" result="noise" /><feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" /></filter>
+    </svg>
+
+    <div id="nebula-base"></div>
+    <div id="nebula-ambient"></div>
+
+    <canvas id="starfield"></canvas>
+    <div id="meteor-container"></div>
+    <div id="nebula-balance"></div>
+
+    <div class="jupiter-container">
+        <div class="jupiter-wrapper">
+            <div class="captured-orbitals" style="--rz: 10deg;"><div class="orbital-particle" style="--d:0deg; --s:4px; --c:#fff; --r:210px; --t:8s;"></div><div class="orbital-particle" style="--d:120deg; --s:2px; --c:#d4af37; --r:240px; --t:12s;"></div><div class="orbital-particle" style="--d:240deg; --s:3.5px; --c:#fff; --r:190px; --t:9s;"></div></div>
+            <div class="captured-orbitals" style="--rz: -25deg;"><div class="orbital-particle" style="--d:50deg; --s:2px; --c:#87CEFA; --r:260px; --t:15s;"></div><div class="orbital-particle" style="--d:200deg; --s:3px; --c:#fff; --r:230px; --t:10s;"></div></div>
+            <div class="ring-layer ring-back"></div>
+            <div class="jupiter-body">
+                <div class="jupiter-texture"></div>
+                <div style="position: absolute; top: 50%; left: -10%; width: 120%; height: 25px; background: rgba(0,0,0,0.6); border-radius: 50%; transform: translateY(-50%); filter: blur(6px); mix-blend-mode: overlay;"></div>
+            </div>
+            <div class="ring-layer ring-front"></div>
+        </div>
+    </div>
+
+    <div id="trail-container"></div>
+    <div id="glow"></div>
+    <div id="cosmic-dust"></div>
+    
+    <div id="cursor-singularity">
+        <div class="focus-core"></div>
+        <div class="normal-orbit">
+            <div class="orbit-star" style="--d: 0deg; --s: 3px; --c: #ffffff; --r: 14px;"></div>
+            <div class="orbit-star" style="--d: 72deg; --s: 2px; --c: #FFD700; --r: 17px;"></div>
+            <div class="orbit-star" style="--d: 144deg; --s: 3.5px; --c: #87CEFA; --r: 13px;"></div>
+            <div class="orbit-star" style="--d: 216deg; --s: 2px; --c: #ffffff; --r: 19px;"></div>
+            <div class="orbit-star" style="--d: 288deg; --s: 2.5px; --c: #FFD700; --r: 15px;"></div>
+        </div>
+        <div id="trail-ring"></div>
+    </div>
+
+    <div id="card-modal" class="modal">
+        <div class="modal-content">
+            <div class="close-btn interactive" onclick="closeModal()" style="font-weight:100; line-height:1;">&times;</div>
+            <span id="modal-tag" style="font-family:'Plus Jakarta Sans', sans-serif; letter-spacing:4px; font-size:0.8rem; text-transform:uppercase; margin-bottom:2rem; display:block; font-weight:600; transition: color 0.5s;"></span>
+            <h3 id="modal-title" style="font-family:'LXGW WenKai',serif; font-size:3rem; font-weight:700; color:var(--text-main); margin-bottom:1.5rem; text-shadow: 0 2px 10px rgba(0,0,0,0.8);"></h3>
+            <p id="modal-desc" style="font-size:1.15rem; line-height:1.8; letter-spacing:0.1rem; color:var(--text-muted); margin-bottom:3rem;"></p>
+            <div id="modal-media">
+                <div class="holo-scanner"></div>
+                <span style="color:rgba(255,255,255,0.5); font-weight:400; position:relative; z-index:2; letter-spacing:0.15rem;">[ 影像数据解码中... ]</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1><span class="fluid-char">杨</span><span class="fluid-char">铮</span><span class="fluid-char">瑞</span></h1>
+            <div class="subtitle">Creator & Explorer</div>
+        </header>
+
+        <div class="bento-grid">
+            <div class="bento-card card-large interactive" data-glow="#d4af37" onclick="openModal(this)">
+                <div class="card-glare"></div>
+                <div class="card-tag">Profile</div>
+                <span class="magnetic-wrap"><div class="card-icon profile-avatar">瑞</div></span>
+                <h3>很高兴认识你！</h3>
+                <div class="pill-container">
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">📍 南京</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">💻 东南大学 · 智能系统</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">✨ 极客底色</div></span>
+                </div>
+                <p>我不满足于单一的“理工男”标签。能熟练驾驭 Python 与 C++，同时也热爱生活的多面性。无论是用镜头捕捉光影，还是在球场挥洒汗水，我都乐在其中。期待能在这里结交更多有趣的灵魂！</p>
+                <div class="media-placeholder"><span style="color:rgba(255,255,255,0.4); font-weight:400; z-index: 2;">[ 摄影作品 / 个人风采 占位 ]</span></div>
+            </div>
+
+            <div class="bento-card card-square interactive" data-glow="#888888">
+                <div class="card-glare"></div>
+                <div class="magnetic-wrap">
+                    <div class="social-icon" style="background: linear-gradient(135deg, #333, #000);">
+                        <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </div>
+                </div>
+                <h4>GitHub</h4>
+                <p>极客空间</p>
+                <span class="magnetic-wrap"><a href="https://github.com/yangzhengrui" target="_blank" class="btn-follow interactive" style="background:#fff; color:#000;">点我直达</a></span>
+            </div>
+
+            <div class="bento-card card-square interactive" data-glow="#ff2a44">
+                <div class="card-glare"></div>
+                <span class="magnetic-wrap"><div class="social-icon" style="background: linear-gradient(135deg, #ff2a44, #8b0015);">小</div></span>
+                <h4>小红书</h4>
+                <p>生活分享</p>
+                <span class="magnetic-wrap"><a href="#" class="btn-follow interactive" style="background:#ff2a44; color:#fff;">关注</a></span>
+            </div>
+
+            <div class="bento-card card-wide interactive" data-glow="#ffd700" onclick="openModal(this)">
+                <div class="card-glare"></div>
+                <div class="card-tag">Hobby / Sports</div>
+                <span class="magnetic-wrap"><div class="card-icon">🏸</div></span>
+                <h3>挥拍与汗水 / 羽毛球</h3>
+                <div class="pill-container">
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">🏸 杀球机器</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">👟 跑不死</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">🏅 场上指挥官</div></span>
+                </div>
+                <p>极其热爱在羽毛球场上挥洒汗水，享受扣杀的快感与球友间默契的配合。生命在于运动，这里未来会存放我的比赛高光时刻记录。</p>
+            </div>
+
+            <div class="bento-card interactive" data-glow="#ffffff" onclick="openModal(this)">
+                <div class="card-glare"></div>
+                <div class="card-tag">Hobby / Lifestyle</div>
+                <span class="magnetic-wrap"><div class="card-icon" style="background: linear-gradient(135deg, #111, #444);">📸</div></span>
+                <h3>镜头与烟火气</h3>
+                <div class="pill-container">
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">📷 扫街达人</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">☕ 拿铁续命</div></span>
+                </div>
+                <p>喜欢用镜头记录生活中的不期而遇。周末扫街拍照，捕捉每一抹光影。</p>
+            </div>
+
+            <div class="bento-card interactive" data-glow="#8a2be2" onclick="openModal(this)">
+                <div class="card-glare"></div>
+                <div class="card-tag">Hobby / AI Art</div>
+                <span class="magnetic-wrap"><div class="card-icon" style="background: linear-gradient(135deg, #4b0082, #1e90ff);">🎨</div></span>
+                <h3>AI 艺术探索</h3>
+                <div class="pill-container">
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">🤖 赛博诗人</div></span>
+                    <span class="magnetic-wrap pill-wrap"><div class="pill">🪄 提示词魔法</div></span>
+                </div>
+                <p>热衷于用大模型与图像生成工具，将天马行空的想象力转化为具象艺术。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cursorSingularity = document.getElementById('cursor-singularity');
+        const trailRingContainer = document.getElementById('trail-ring');
+        const glow = document.getElementById('glow');
+        const cosmicDust = document.getElementById('cosmic-dust');
+        const cards = document.querySelectorAll('.bento-card');
+        const fluidChars = document.querySelectorAll('.fluid-char'); 
+        
+        let targetX = window.innerWidth / 2, targetY = window.innerHeight / 2;
+        let glowX = targetX, glowY = targetY;
+        let dustX = targetX, dustY = targetY; 
+        let isHovering = false; 
+        let isExploding = false; 
+        let isWarping = false;   
+        let warpSpeed = 0;       
+        let isDrawing = false;   
+
+        // 创世爆发
+        window.addEventListener('load', () => {
+            setTimeout(() => { 
+                document.body.classList.add('loaded');
+                isExploding = true; 
+                setTimeout(() => isExploding = false, 1500);
+            }, 1500); 
+        });
+
+        // 磁吸炸开星环
+        const ringStarCount = 24; const ringStars = [];
+        for(let i = 0; i < ringStarCount; i++) {
+            let dot = document.createElement('div'); dot.className = 'radiating-ring'; 
+            let angle = (i / ringStarCount) * Math.PI * 2; let hRadius = 22 + Math.random() * 4; 
+            let hx = Math.cos(angle) * hRadius; let hy = Math.sin(angle) * hRadius;
+            dot.style.setProperty('--hx', `${hx}px`); dot.style.setProperty('--hy', `${hy}px`);
+            dot.style.setProperty('--dx', `0px`); dot.style.setProperty('--dy', `0px`);
+            let size = Math.random() * 1.5 + 0.5; dot.style.width = `${size}px`; dot.style.height = `${size}px`;
+            let isGold = Math.random() > 0.5; dot.style.background = isGold ? '#d4af37' : '#ffffff';
+            dot.style.boxShadow = isGold ? '0 0 4px rgba(212, 175, 55, 0.8)' : '0 0 4px rgba(255, 255, 255, 0.8)';
+            dot.style.opacity = '0'; trailRingContainer.appendChild(dot); ringStars.push(dot);
+        }
+
+        const radiateStars = [];
+        function createRadiatingRing() {
+            for (let j = 0; j < 3; j++) {
+                let ring = document.createElement('div'); ring.className = 'radiating-ring';
+                ring.style.background = 'radial-gradient(circle, transparent 52%, rgba(220, 200, 180, 0.05) 53%, rgba(240, 220, 200, 0.3) 55%, transparent 61%, rgba(180, 160, 140, 0.25) 63%, rgba(160, 140, 120, 0.1) 68%, rgba(150, 130, 110, 0.02) 72%, transparent 75%)';
+                ring.style.animation = `singularity-radiate 2.5s infinite linear`; ring.style.animationDelay = `${j * 0.8}s`; 
+                cursorSingularity.appendChild(ring); radiateStars.push(ring);
+            }
+        }
+        createRadiatingRing(); 
+
+        const trailContainer = document.getElementById('trail-container');
+        const trailCount = 10; const trailDots = [];
+        for (let i = 0; i < trailCount; i++) {
+            let dot = document.createElement('div'); dot.className = 'trail-dot';
+            let ratio = i / trailCount; let size = 2 * (1 - ratio) + 0.5; 
+            dot.style.width = `${size}px`; dot.style.height = `${size}px`;
+            let r = Math.floor(255 - ratio * 150), g = Math.floor(240 - ratio * 150), b = Math.floor(200 + ratio * 55);
+            dot.style.background = `rgb(${r}, ${g}, ${b})`; dot.style.boxShadow = `0 0 5px 1px rgba(${r}, ${g}, ${b}, ${0.5 - ratio*0.3})`;
+            trailContainer.appendChild(dot); trailDots.push({ el: dot, x: targetX, y: targetY });
+        }
+
+        window.addEventListener("deviceorientation", (e) => {
+            if(e.beta !== null && e.gamma !== null) {
+                let x = window.innerWidth / 2 + e.gamma * 15; let y = window.innerHeight / 2 + (e.beta - 45) * 15;
+                targetX += (Math.max(0, Math.min(window.innerWidth, x)) - targetX) * 0.1;
+                targetY += (Math.max(0, Math.min(window.innerHeight, y)) - targetY) * 0.1;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => { targetX = e.clientX; targetY = e.clientY; cursorSingularity.style.transform = `translate(calc(${targetX}px - 50%), calc(${targetY}px - 50%))`; });
+
+        // 星象织网
+        document.addEventListener('mousedown', (e) => { if(!e.target.closest('.bento-card') && !e.target.closest('.modal-content')) { isDrawing = true; cursorSingularity.querySelector('.focus-core').style.transform = 'translate(-50%, -50%) scale(0.5)'; } });
+        document.addEventListener('mouseup', () => { isDrawing = false; cursorSingularity.querySelector('.focus-core').style.transform = ''; });
+        document.addEventListener('touchstart', (e) => { if(!e.target.closest('.bento-card') && !e.target.closest('.modal-content')) { isDrawing = true; targetX = e.touches[0].clientX; targetY = e.touches[0].clientY; } }, {passive: true});
+        document.addEventListener('touchend', () => isDrawing = false);
+
+        // 卡片交互 
+        cards.forEach(card => {
+            const glare = card.querySelector('.card-glare');
+            const magnetics = card.querySelectorAll('.magnetic-wrap');
+            const themeColor = card.getAttribute('data-glow') || '#d4af37'; 
+
+            card.addEventListener('mousemove', (e) => {
+                isHovering = true;
+                cursorSingularity.classList.add('hover-mode'); radiateStars.forEach(s => s.style.display = 'none'); ringStars.forEach(s => s.style.opacity = '1'); 
+                document.documentElement.style.setProperty('--dynamic-glow', themeColor);
+
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                const xc = rect.width / 2; const yc = rect.height / 2;
+                const dx = x - xc; const dy = y - yc;
+                
+                /* 优化 2: 减弱 3D 倾斜抖动，分母改为 70 (原来是 35)，增加物理厚重感 */
+                card.style.transform = `perspective(1200px) rotateY(${dx / 70}deg) rotateX(${-dy / 70}deg) translateY(-4px) scale(1.01)`;
+                if(glare) { glare.style.setProperty('--mx', `${x}px`); glare.style.setProperty('--my', `${y}px`); }
+
+                /* 优化 2: 标签等元素减弱抖动 (分级磁吸) */
+                magnetics.forEach(m => {
+                    const mRect = m.getBoundingClientRect();
+                    const mxc = mRect.left + mRect.width / 2; const myc = mRect.top + mRect.height / 2;
+                    const mx = e.clientX - mxc; const my = e.clientY - myc;
+                    
+                    // 判断是否是标签，标签减弱抖动
+                    const isPill = m.classList.contains('pill-wrap');
+                    const dampen = isPill ? 15 : 5; // 标签除以 15，移动极少；图标除以 5
+                    const triggerRadius = isPill ? 50 : 90; // 标签更靠近才触发
+                    
+                    if(Math.hypot(mx, my) < triggerRadius) {
+                        m.style.transform = `translate(${mx/dampen}px, ${my/dampen}px)`;
+                    } else {
+                        m.style.transform = `translate(0,0)`;
+                    }
+                });
+            });
+
+            card.addEventListener('mouseleave', () => {
+                isHovering = false;
+                cursorSingularity.classList.remove('hover-mode'); radiateStars.forEach(s => s.style.display = 'block'); ringStars.forEach(s => s.style.opacity = '0');
+                document.documentElement.style.setProperty('--dynamic-glow', '#d4af37'); 
+                card.style.transform = ''; magnetics.forEach(m => m.style.transform = `translate(0,0)`);
+            });
+        });
+
+        const meteorContainer = document.getElementById('meteor-container');
+        function createMeteor() {
+            const meteor = document.createElement('div'); meteor.className = 'meteor';
+            const length = Math.random() * 120 + 60; const angle = Math.random() * 20 + 15; const speed = Math.random() * 0.6 + 0.4;
+            meteor.style.setProperty('--l', `${length}px`); meteor.style.setProperty('--d', `${angle}deg`); meteor.style.setProperty('--t', `${speed}s`);
+            const startX = Math.random() * window.innerWidth + window.innerWidth * 0.2; const startY = Math.random() * window.innerHeight * 0.5 - 200;
+            const endX = startX - (length * 3 + Math.random() * 200); const endY = startY + (length * 1.5 + Math.random() * 100);
+            meteor.style.setProperty('--sx', `${startX}px`); meteor.style.setProperty('--sy', `${startY}px`);
+            meteor.style.setProperty('--ex', `${endX}px`); meteor.style.setProperty('--ey', `${endY}px`);
+            meteorContainer.appendChild(meteor); setTimeout(() => { meteor.remove(); }, speed * 1000);
+        }
+        function meteorShower() { if (Math.random() > 0.6) { createMeteor(); if (Math.random() > 0.8) createMeteor(); } setTimeout(meteorShower, Math.random() * 3000 + 1500); }
+        meteorShower();
+
+        // 优化 1 & 3: 跃迁式弹窗 (修复 CSS 动画，继承颜色)
+        const modal = document.getElementById('card-modal');
+        function openModal(card) {
+            if(card.classList.contains('card-square')) return;
+            const themeColor = card.getAttribute('data-glow') || '#d4af37'; 
+            document.querySelector('.modal-content').style.setProperty('--modal-glow', themeColor);
+            
+            document.getElementById('modal-tag').innerText = card.querySelector('.card-tag').innerText;
+            document.getElementById('modal-tag').style.color = themeColor;
+            document.getElementById('modal-title').innerText = card.querySelector('h3').innerText;
+            document.getElementById('modal-desc').innerText = card.querySelector('p').innerText;
+            
+            isWarping = true; warpSpeed = 0; 
+            document.body.classList.add('modal-open'); 
+            trailContainer.style.opacity = '0'; 
+            
+            // 完美顺滑过渡
+            setTimeout(() => { 
+                isWarping = false; // 交给 animate 内部自行平滑减速
+                modal.classList.add('show'); 
+            }, 400); 
+        }
+        function closeModal() { 
+            modal.classList.remove('show'); document.body.classList.remove('modal-open'); 
+            trailContainer.style.opacity = '1'; cursorSingularity.classList.remove('hover-mode'); 
+            radiateStars.forEach(s => s.style.display = 'block'); ringStars.forEach(s => s.style.opacity = '0');
+        }
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        // 核心引擎
+        const canvas = document.getElementById('starfield'); const ctx = canvas.getContext('2d');
+        let sw, sh, stars = [];
+        const starColors = ['rgba(255, 255, 255, ', 'rgba(255, 228, 181, ', 'rgba(135, 206, 250, '];
+
+        function initStars() {
+            sw = canvas.width = window.innerWidth; sh = canvas.height = window.innerHeight;
+            stars = []; 
+            const numClusters = 5; const clusters = [];
+            for(let i=0; i<numClusters; i++) { clusters.push({ x: Math.random() * sw, y: Math.random() * sh, radius: Math.random() * sw * 0.4 + 100 }); }
+
+            for (let i = 0; i < 1500; i++) {
+                let x, y;
+                if (Math.random() > 0.3) { 
+                    let c = clusters[Math.floor(Math.random() * numClusters)];
+                    let angle = Math.random() * Math.PI * 2; let r = Math.pow(Math.random(), 2) * c.radius; 
+                    x = c.x + Math.cos(angle) * r; y = c.y + Math.sin(angle) * r;
+                } else {
+                    x = Math.random() * sw * 1.5 - sw * 0.25; y = Math.random() * sh * 1.5 - sh * 0.25;
+                }
+                let layerRand = Math.random(); let layer = layerRand < 0.6 ? 1 : (layerRand < 0.9 ? 2 : 3); 
+                let baseSize = layer === 1 ? Math.random() * 0.6 + 0.2 : (layer === 2 ? Math.random() * 1.0 + 0.6 : Math.random() * 1.2 + 1.0);
+                let finalColor = starColors[Math.floor(Math.random()*starColors.length)];
+                stars.push({ x: x, y: y, layer: layer, color: finalColor, baseSize: baseSize, blink: Math.random() * 0.04 + 0.005 });
+            }
+        }
+
+        let starX = 0, starY = 0, gridX = 0, gridY = 0, planetX = 0, planetY = 0;
+        
+        function animate() {
+            // 标题流体力学
+            fluidChars.forEach(char => {
+                const rect = char.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2;
+                const dx = targetX - cx; const dy = targetY - cy;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 150) {
+                    const force = (150 - dist) / 150;
+                    char.style.transform = `translate(${-dx * force * 0.15}px, ${-dy * force * 0.15}px) scale(${1 + force*0.05})`;
+                    char.style.color = '#fff'; char.style.textShadow = `0 0 20px var(--accent-gold)`;
+                } else {
+                    char.style.transform = `translate(0px, 0px) scale(1)`;
+                    char.style.color = 'var(--text-main)'; char.style.textShadow = `2px 4px 10px rgba(0,0,0,0.9), 0 0 20px rgba(253, 245, 230, 0.2)`;
+                }
+            });
+
+            glowX += (targetX - glowX) * 0.08; glowY += (targetY - glowY) * 0.08;
+            glow.style.transform = `translate(calc(${glowX}px - 50%), calc(${glowY}px - 50%))`;
+            
+            dustX += (targetX - dustX) * 0.04; dustY += (targetY - dustY) * 0.04;
+            cosmicDust.style.transform = `translate(calc(${dustX}px - 50%), calc(${dustY}px - 50%)) rotate(${Date.now() * 0.02}deg)`;
+            let themeColor = document.documentElement.style.getPropertyValue('--dynamic-glow');
+            if (isHovering && themeColor !== '#d4af37') { cosmicDust.style.opacity = '0.3'; } 
+            else { cosmicDust.style.opacity = isHovering ? '0' : '0.6'; }
+            
+            trailDots[0].x += (targetX - trailDots[0].x) * 0.35; trailDots[0].y += (targetY - trailDots[0].y) * 0.35;
+            trailDots[0].el.style.transform = `translate(calc(${trailDots[0].x}px - 50%), calc(${trailDots[0].y}px - 50%))`;
+            
+            let trailR = 255, trailG = 255, trailB = 255;
+            if(themeColor.includes('#ff2a44')) { trailR=255; trailG=42; trailB=68; } else if(themeColor.includes('#8a2be2')) { trailR=138; trailG=43; trailB=226; } else if(themeColor.includes('#888888')) { trailR=150; trailG=150; trailB=150; } else { trailR=212; trailG=175; trailB=55; }
+            for (let i = 1; i < trailCount; i++) {
+                trailDots[i].x += (trailDots[i-1].x - trailDots[i].x) * 0.45; trailDots[i].y += (trailDots[i-1].y - trailDots[i].y) * 0.45;
+                trailDots[i].el.style.transform = `translate(calc(${trailDots[i].x}px - 50%), calc(${trailDots[i].y}px - 50%))`;
+                let ratio = i / trailCount; trailDots[i].el.style.background = `rgba(${trailR},${trailG},${trailB},${1-ratio})`;
+                trailDots[i].el.style.boxShadow = `0 0 5px 1px rgba(${trailR},${trailG},${trailB}, ${(1-ratio)*0.5})`; trailDots[i].el.style.opacity = (1 - (i / trailCount)) * 0.4;
+            }
+
+            const deltaX = targetX - window.innerWidth / 2; const deltaY = targetY - window.innerHeight / 2;
+            gridX += (deltaX * 0.015 - gridX) * 0.08; gridY += (deltaY * 0.015 - gridY) * 0.08;
+            planetX += (deltaX * 0.005 - planetX) * 0.05; planetY += (deltaY * 0.005 - planetY) * 0.05;
+            let timeDriftX = Math.cos(Date.now() * 0.0001) * 2; let timeDriftY = Math.sin(Date.now() * 0.0001) * 2;
+            starX += (deltaX * 0.005 - starX) * 0.05 + timeDriftX * 0.02; starY += (deltaY * 0.005 - starY) * 0.05 + timeDriftY * 0.02;
+
+            document.documentElement.style.setProperty('--grid-x', `${gridX}px`); document.documentElement.style.setProperty('--grid-y', `${gridY}px`);
+            document.documentElement.style.setProperty('--planet-x', `${planetX}px`); document.documentElement.style.setProperty('--planet-y', `${planetY}px`);
+            document.documentElement.style.setProperty('--star-x', `${starX}px`); document.documentElement.style.setProperty('--star-y', `${starY}px`);
+
+            ctx.clearRect(0,0,sw,sh); 
+            let renderedStars = [];
+
+            // 平滑跃迁速度减缓逻辑
+            if (isWarping) { warpSpeed += 0.025; } 
+            else if (warpSpeed > 0) { warpSpeed -= 0.04; if (warpSpeed < 0) warpSpeed = 0; }
+
+            for(let s of stars){
+                let pMult = s.layer === 1 ? 0.4 : (s.layer === 2 ? 1.2 : 3.0);
+                let px = s.x + starX * pMult; let py = s.y + starY * pMult;
+
+                if(isExploding) { px += (s.x - sw/2) * (s.layer * 0.3); py += (s.y - sh/2) * (s.layer * 0.3); }
+
+                const gdx = targetX - px; const gdy = targetY - py;
+                const dist = Math.hypot(gdx, gdy);
+                if(dist < 150 && !isExploding && !isHovering && warpSpeed === 0) {
+                    const force = (150 - dist) / 150;
+                    px += gdx * force * 0.15; py += gdy * force * 0.15;
+                }
+
+                if (warpSpeed > 0.01) {
+                    let wdx = px - sw/2; let wdy = py - sh/2; let wdist = Math.hypot(wdx, wdy) || 1;
+                    let stretch = wdist * warpSpeed * s.layer; 
+                    let endPx = px + (wdx/wdist) * stretch; let endPy = py + (wdy/wdist) * stretch;
+                    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(endPx, endPy);
+                    ctx.strokeStyle = s.color + Math.max(0.1, 0.8 - warpSpeed*0.1) + ')';
+                    ctx.lineWidth = s.baseSize > 1 ? 1.5 : s.baseSize; ctx.stroke();
+                } 
+                else if(px >= -20 && px <= sw+20 && py >= -20 && py <= sh+20){
+                    renderedStars.push({x: px, y: py}); 
+                    ctx.beginPath(); ctx.arc(px, py, s.baseSize, 0, Math.PI * 2);
+                    let depthOpacityLimit = s.layer === 1 ? 0.35 : (s.layer === 2 ? 0.7 : 1.0);
+                    let op = Math.max(0.05, Math.min(1.0, (Math.sin(Date.now()*s.blink)*0.5+0.5) * depthOpacityLimit));
+                    
+                    if (isHovering && themeColor !== '#d4af37' && dist < 300) { ctx.fillStyle = themeColor; } else { ctx.fillStyle = s.color + op + ')'; }
+                    ctx.fill();
+                }
+            }
+
+            if (isDrawing && warpSpeed === 0) {
+                ctx.beginPath();
+                let activeNodes = renderedStars.filter(rs => Math.hypot(rs.x - targetX, rs.y - targetY) < 120);
+                activeNodes.forEach(n1 => {
+                    ctx.moveTo(n1.x, n1.y); ctx.lineTo(targetX, targetY); 
+                    activeNodes.forEach(n2 => { if(Math.hypot(n1.x - n2.x, n1.y - n2.y) < 60) { ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); } });
+                });
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.35)'; ctx.lineWidth = 0.5; ctx.stroke();
+                ctx.beginPath(); ctx.arc(targetX, targetY, 2, 0, Math.PI*2);
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = '#d4af37'; ctx.fill(); ctx.shadowBlur = 0; 
+            }
+
+            requestAnimationFrame(animate);
+        }
+        initStars(); animate(); window.addEventListener('resize', initStars);
+    </script>
+</body>
+</html>
