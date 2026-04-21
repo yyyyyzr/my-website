@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杨铮瑞 - Life Explorer & Creator</title>
+    <style>
+        :root {
+            --grid-x: 0px; --grid-y: 0px;
+            --accent-gold: #e6c245; 
+            --dynamic-glow: #e6c245; 
+            --modal-glow: #e6c245;
+            --text-main: #FFFFFF; 
+            --text-muted: #D0D0D0; 
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; }
+
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        html { scrollbar-width: none; overflow: hidden; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #010103; 
+            color: var(--text-muted);
+            line-height: 1.6;
+            overflow: hidden; 
+            width: 100vw;
+            height: 100vh;
+            perspective: 1200px; 
+            user-select: none;
+        }
+
+        /* --- 创世序幕 --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #010103; z-index: 100000;
+            display: flex; align-items: center; justify-content: center; transition: opacity 0.6s ease, visibility 0.6s;
+        }
+        .singularity { width: 4px; height: 4px; background: var(--accent-gold); border-radius: 50%; box-shadow: 0 0 20px 2px var(--accent-gold); animation: singularity-pulse 1.5s infinite alternate; }
+        @keyframes singularity-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(2.5); opacity: 1; box-shadow: 0 0 60px 15px var(--accent-gold); } }
+        body.loaded #preloader { opacity: 0; visibility: hidden; }
+
+        /* --- 宇宙深空氛围 (银河尘埃带 + 环境浅层光晕) --- */
+        .nebula-core {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -3; pointer-events: none;
+            background:
+                radial-gradient(circle at 15% 30%, rgba(38, 28, 65, 0.35) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(55, 45, 15, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(15, 35, 55, 0.3) 0%, transparent 55%);
+            filter: blur(60px); opacity: 0; transition: opacity 2s ease;
+            animation: cosmic-breathe 25s infinite alternate ease-in-out;
+        }
+        .milky-way-band {
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; z-index: -4; pointer-events: none;
+            background: radial-gradient(ellipse at center, rgba(100, 150, 255, 0.08) 0%, transparent 60%);
+            transform: rotate(-25deg); filter: url(#bh-plasma) blur(10px); opacity: 0; transition: opacity 3s ease 1s;
+        }
+        
+        #ambient-mouse-glow {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: -2; 
+            background: radial-gradient(circle 800px at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.025), transparent 60%);
+            transition: background 0.3s ease; mix-blend-mode: screen; opacity: 0;
+        }
+        body.loaded #ambient-mouse-glow { opacity: 1; }
+        body.loaded .nebula-core { opacity: 1; }
+        body.loaded .milky-way-band { opacity: 0.8; }
+        @keyframes cosmic-breathe { 0% { transform: scale(1) rotate(0deg); filter: blur(60px) brightness(0.8); } 100% { transform: scale(1.1) rotate(5deg); filter: blur(70px) brightness(1.2); } }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E'); opacity: 0.04; z-index: 0; pointer-events: none; mix-blend-mode: overlay; }
+
+        /* ✨ 电影级流星雨特效 */
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 1; }
+        #meteor-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: hidden; }
+        .meteor { 
+            position: absolute; height: 2px; 
+            /* 更真实的流星拖尾：头部耀白，尾部逐渐透明并带有一点点蓝紫冷色调 */
+            background: linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(135,206,250,0.6) 10%, rgba(100,150,255,0.2) 40%, transparent 100%); 
+            border-radius: 50% 0 0 50%; width: var(--l); opacity: var(--op); 
+            box-shadow: -2px 0 10px rgba(135,206,250,0.6); 
+            animation: meteor-swipe var(--t) cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+            filter: blur(var(--b)); 
+        }
+        .meteor::before { 
+            content: ''; position: absolute; top: 50%; left: 0; width: 4px; height: 4px; 
+            background: #fff; border-radius: 50%; transform: translate(-50%, -50%); 
+            box-shadow: 0 0 12px 4px #fff, 0 0 25px 8px rgba(135,206,250,0.8); 
+        }
+        @keyframes meteor-swipe { 
+            0% { transform: translate(var(--sx), var(--sy)) rotate(var(--d)) scaleX(0); opacity: 0; } 
+            15% { opacity: var(--op); transform: translate(calc(var(--sx) - var(--l)*0.15), calc(var(--sy) + var(--l)*0.15*tan(var(--d)))) rotate(var(--d)) scaleX(1); } 
+            100% { transform: translate(var(--ex), var(--ey)) rotate(var(--d)) scaleX(0.05); opacity: 0; } 
+        }
+
+        /* 🪐 远景木星 (右上角) */
+        .jupiter-container { position: fixed; top: -10%; right: -5%; width: 700px; height: 700px; z-index: 1; pointer-events: none; display: flex; align-items: center; justify-content: center; filter: blur(2px) drop-shadow(0 0 30px rgba(180, 120, 80, 0.05)); opacity: 0; transition: opacity 2s ease 0.5s, filter 0.8s ease, drop-shadow 0.8s ease; }
+        body.loaded .jupiter-container { opacity: 0.8; }
+        .jupiter-hitbox { position: relative; width: 500px; height: 500px; display: flex; align-items: center; justify-content: center; border-radius: 50%; pointer-events: auto; }
+        .jupiter-wrapper { position: relative; width: 600px; height: 600px; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; transform: rotateX(72deg) rotateY(-15deg); animation: jupiter-tilt 25s infinite alternate ease-in-out; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes jupiter-tilt { 0% { transform: rotateX(72deg) rotateY(-15deg) rotateZ(0deg); } 100% { transform: rotateX(68deg) rotateY(-18deg) rotateZ(10deg); } }
+        
+        .jupiter-hitbox:hover .jupiter-wrapper { transform: rotateX(70deg) rotateY(-12deg) scale(1.02); }
+        .jupiter-hitbox:hover .captured-orbitals .orbital-particle { animation-duration: calc(var(--t) * 0.3); }
+        .jupiter-hitbox:hover .jupiter-dust-particle { animation-duration: calc(var(--t) * 0.4); box-shadow: 0 0 5px rgba(255, 240, 220, 0.8); }
+        
+        .captured-orbitals { position: absolute; width: 100%; height: 100%; border-radius: 50%; z-index: 1; transform: rotateZ(var(--rz)); transform-style: preserve-3d; }
+        .orbital-particle { position: absolute; top: 50%; left: 50%; width: var(--s); height: var(--s); background: var(--c); border-radius: 50%; box-shadow: 0 0 8px 2px var(--c); animation: particle-orbit var(--t) infinite linear; transform-origin: 0 0; transition: animation-duration 0.8s ease; }
+        @keyframes particle-orbit { 0% { transform: rotate(0deg) translateX(var(--r)) rotateX(90deg); } 100% { transform: rotate(360deg) translateX(var(--r)) rotateX(90deg); } }
+        
+        .jupiter-body { position: absolute; width: 280px; height: 280px; border-radius: 50%; transform: rotateY(15deg) rotateX(-72deg) rotateZ(10deg); z-index: 2; background: #d4c1ad; -webkit-mask-image: radial-gradient(circle closest-side, black 95%, transparent 100%); mask-image: radial-gradient(circle closest-side, black 95%, transparent 100%); overflow: hidden; box-shadow: inset -50px -50px 80px rgba(0,0,0,0.95), inset 15px 15px 30px rgba(255, 240, 220, 0.4), inset 0 0 40px rgba(180, 140, 100, 0.2); }
+        .jupiter-texture { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 65% 55%, rgba(133, 75, 50, 0.8) 0%, rgba(107, 62, 42, 0.6) 15%, transparent 30%), repeating-linear-gradient(0deg, rgba(107, 76, 58, 0.6) 0%, rgba(156, 122, 92, 0.4) 8%, rgba(212, 193, 173, 0.5) 18%, rgba(133, 97, 66, 0.7) 28%, rgba(84, 58, 41, 0.6) 40%); filter: url(#jupiter-clouds) blur(1px); mix-blend-mode: multiply; animation: cloud-flow 60s linear infinite; }
+        @keyframes cloud-flow { 0% { background-position: 0 0; } 100% { background-position: 300px 0; } }
+        
+        .ring-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, transparent 52%, rgba(220, 200, 180, 0.05) 53%, rgba(240, 220, 200, 0.2) 55%, rgba(200, 180, 150, 0.15) 59%, transparent 61%, rgba(180, 160, 140, 0.2) 63%, rgba(160, 140, 120, 0.05) 68%, rgba(150, 130, 110, 0.01) 72%, transparent 75%); animation: ring-spin 30s linear infinite; transform-style: preserve-3d;}
+        .ring-back { clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%); transform: translateZ(-2px); z-index: 1; }
+        .ring-front { clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%); transform: translateZ(2px); z-index: 4; }
+        
+        .jupiter-dust { position: absolute; width: 120%; height: 120%; border-radius: 50%; z-index: -1; transform-style: preserve-3d; }
+        .jupiter-dust-particle { position: absolute; width: 1.5px; height: 1.5px; background: rgba(255, 240, 220, 0.6); border-radius: 50%; filter: blur(0.5px); animation: jupiter-dust-orbit var(--t) infinite linear; transition: animation-duration 0.8s ease, box-shadow 0.4s ease; }
+        @keyframes jupiter-dust-orbit { 0% { transform: rotate(var(--d)) translateX(var(--r)) rotateX(90deg) rotateY(var(--y)) opacity(0); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: rotate(calc(var(--d) + 360deg)) translateX(var(--r)) rotateX(90deg) rotateY(var(--y)) opacity(0); } }
+
+        /* 🌌 终极稳定写实黑洞 (左下角) */
+        .blackhole-container {
+            position: fixed; bottom: 2%; left: 3%; width: 450px; height: 450px; z-index: -2; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 3s ease 1.5s;
+            animation: bh-float 18s infinite alternate ease-in-out;
+        }
+        body.loaded .blackhole-container { opacity: 0.95; }
+        @keyframes bh-float { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-20px) scale(1.02); } }
+        
+        .bh-hitbox { position: relative; width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; border-radius: 50%; pointer-events: auto; }
+
+        .bh-wrapper {
+            position: relative; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            /* ✨ 绝对锁定透视角度，防止 3D 扁平化 */
+            transform: rotateX(76deg) rotateY(-10deg);
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* 悬停交互：只允许平滑缩放和内部元素提亮加速 */
+        .bh-hitbox:hover .bh-wrapper { 
+            transform: rotateX(76deg) rotateY(-10deg) scale(1.06); 
+        }
+        .bh-hitbox:hover .bh-disk-main { animation-duration: 3s; filter: blur(3px) brightness(1.2) contrast(1.1); }
+        .bh-hitbox:hover .bh-lens-top { filter: blur(12px) brightness(1.4); }
+        .bh-hitbox:hover .bh-lens-bottom { filter: blur(10px) brightness(1.4); }
+        .bh-hitbox:hover .bh-core-dark { box-shadow: 0 0 25px 5px rgba(255, 200, 150, 0.9), 0 0 60px rgba(255, 150, 80, 0.4), inset 0 0 30px #000; }
+        .bh-hitbox:hover .bh-dust-particle { animation-duration: calc(var(--t) * 0.2); background: rgba(255,255,255,0.9); }
+
+        /* 主吸积盘 */
+        .bh-disk-main {
+            position: absolute; top: 50%; left: 50%; width: 400px; height: 400px;
+            transform: translate(-50%, -50%); border-radius: 50%;
+            background: conic-gradient(from 0deg, 
+                rgba(0,0,0,0) 0%, 
+                rgba(150, 50, 10, 0.4) 15%, 
+                rgba(255, 180, 100, 0.85) 30%, 
+                rgba(255, 255, 255, 1) 45%, 
+                rgba(255, 255, 255, 1) 55%, 
+                rgba(255, 150, 50, 0.75) 70%, 
+                rgba(100, 20, 0, 0.3) 85%, 
+                rgba(0,0,0,0) 100%
+            );
+            filter: blur(4px);
+            -webkit-mask-image: radial-gradient(circle closest-side, transparent 25%, black 48%, transparent 100%);
+            animation: disk-spin 12s linear infinite;
+            z-index: 5; transition: animation-duration 1s ease, filter 1s ease;
+        }
+        @keyframes disk-spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        
+        /* 黑洞核心 (事件视界) */
+        .bh-core-dark {
+            position: absolute; top: 50%; left: 50%; width: 130px; height: 130px;
+            background: #000; border-radius: 50%;
+            transform: translate(-50%, -50%) rotateY(10deg) rotateX(-76deg); 
+            box-shadow: 
+                0 0 12px 2px rgba(255, 200, 150, 0.8),  
+                0 0 40px rgba(255, 150, 80, 0.3),     
+                inset 0 0 30px #000;                    
+            z-index: 10; transition: box-shadow 0.6s ease;
+        }
+
+        /* 上方引力透镜 */
+        .bh-lens-top {
+            position: absolute; top: 50%; left: 50%; width: 240px; height: 240px;
+            border-radius: 50%;
+            border-top: 35px solid rgba(255, 230, 200, 0.9);
+            border-left: 12px solid rgba(255, 120, 40, 0.4);
+            border-right: 18px solid rgba(255, 255, 255, 0.8);
+            filter: blur(10px);
+            transform: translate(-50%, -50%) rotateY(10deg) rotateX(-76deg) translateY(-45px); 
+            z-index: 1; 
+            -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 48%);
+            mask-image: linear-gradient(to bottom, black 30%, transparent 48%);
+            transition: filter 0.8s ease;
+        }
+
+        /* 下方引力透镜 */
+        .bh-lens-bottom {
+            position: absolute; top: 50%; left: 50%; width: 180px; height: 180px;
+            border-radius: 50%;
+            border-bottom: 24px solid rgba(255, 180, 100, 0.7);
+            border-left: 8px solid transparent; border-right: 8px solid transparent;
+            filter: blur(8px);
+            transform: translate(-50%, -50%) rotateY(10deg) rotateX(-76deg) translateY(32px);
+            z-index: 15; 
+            -webkit-mask-image: linear-gradient(to top, black 25%, transparent 45%);
+            mask-image: linear-gradient(to top, black 25%, transparent 45%);
+            transition: filter 0.8s ease;
+        }
+
+        .bh-dust { position: absolute; width: 150%; height: 150%; z-index: -1; transform-style: preserve-3d; }
+        .bh-dust-particle {
+            position: absolute; width: 2px; height: 2px; background: rgba(255, 220, 180, 0.6); border-radius: 50%;
+            filter: blur(0.8px);
+            animation: bh-dust-spiral var(--t) infinite cubic-bezier(0.4, 0, 1, 1);
+            transition: animation-duration 0.5s ease, background 0.5s ease;
+        }
+        @keyframes bh-dust-spiral {
+            0% { transform: rotate(var(--d)) translateX(var(--r)) rotateX(90deg) rotateY(0deg) scale(1.5); opacity: 0; }
+            10% { opacity: 0.8; }
+            100% { transform: rotate(calc(var(--d) + 540deg)) translateX(calc(var(--r) * 0.05)) rotateX(90deg) rotateY(180deg) scale(0.1); opacity: 0; }
+        }
+
+        /* --- 智能紧贴粒子光标 --- */
+        #cursor-singularity, #cursor-singularity * { pointer-events: none !important; }
+        #cursor-singularity { position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 999999; transform: translate(var(--mouse-x), var(--mouse-y)); }
+        
+        .focus-halo { position: absolute; top: 0; left: 0; width: 120px; height: 120px; background: radial-gradient(circle, var(--dynamic-glow) 0%, transparent 60%); opacity: 0.15; border-radius: 50%; transform: translate(-50%, -50%); transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease, background 0.3s ease; mix-blend-mode: screen; filter: blur(8px); }
+        .focus-stardust { position: absolute; top: 0; left: 0; width: 150px; height: 150px; transform: translate(-50%, -50%); border-radius: 50%; background-image: radial-gradient(1.5px 1.5px at 20% 30%, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 80% 40%, var(--dynamic-glow), rgba(0,0,0,0)), radial-gradient(2.5px 2.5px at 40% 80%, #fff, rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 70% 90%, var(--dynamic-glow), rgba(0,0,0,0)), radial-gradient(2px 2px at 10% 60%, #fff, rgba(0,0,0,0)); animation: spin-stardust 15s linear infinite; opacity: 0.6; transition: opacity 0.3s ease; }
+        @keyframes spin-stardust { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        .focus-core { 
+            position: absolute; top: 0; left: 0; width: 6px; height: 6px; background: #ffffff; border-radius: 50%; 
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.9), 0 0 20px 5px var(--dynamic-glow); 
+            transform: translate(-50%, -50%); transition: width 0.2s ease, height 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-radius 0.2s ease; 
+            animation: core-idle-pulse 2s infinite alternate ease-in-out;
+        }
+        @keyframes core-idle-pulse { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8;} 100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } }
+
+        #cursor-singularity.in-gravity-field .focus-core { border-radius: 50% 20% 50% 20%; transform: translate(-50%, -50%) rotate(45deg) scale(1.3, 0.8); animation: none; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px 2px var(--dynamic-glow); }
+
+        .normal-orbit { position: absolute; top: 0; left: 0; width: 0; height: 0; animation: orbit-spin 6s linear infinite; transition: opacity 0.3s ease; }
+        .normal-orbit.reverse { animation: orbit-spin-reverse 4s linear infinite; }
+        .orbit-star { position: absolute; top: 0; left: 0; width: var(--s); height: var(--s); background: var(--c); border-radius: 50%; box-shadow: 0 0 6px 1px var(--c), 0 0 15px 3px var(--dynamic-glow); transform: translate(-50%, -50%) rotate(var(--d)) translateX(var(--r)); }
+        @keyframes orbit-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes orbit-spin-reverse { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+
+        /* 光圈变身 */
+        #cursor-singularity.hover-mode .focus-core { width: 48px; height: 48px; background: rgba(255,255,255,0.02); border: 1.5px solid var(--dynamic-glow); box-shadow: 0 0 25px var(--dynamic-glow), inset 0 0 15px var(--dynamic-glow); animation: cursor-breathe 2s infinite ease-in-out; border-radius: 50%; transform: translate(-50%, -50%); }
+        #cursor-singularity.hover-mode .focus-core::before, #cursor-singularity.hover-mode .focus-core::after { content: ''; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px; border: 1.5px solid transparent; border-radius: 50%; pointer-events: none; }
+        #cursor-singularity.hover-mode .focus-core::before { border-top-color: var(--dynamic-glow); border-bottom-color: var(--dynamic-glow); animation: spin-reticle 2s linear infinite; }
+        #cursor-singularity.hover-mode .focus-core::after { top: 2px; left: 2px; right: 2px; bottom: 2px; border-left-color: var(--dynamic-glow); border-right-color: var(--dynamic-glow); animation: spin-reticle 3s linear infinite reverse; }
+        @keyframes spin-reticle { 100% { transform: rotate(360deg); } }
+        @keyframes cursor-breathe { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } 100% { transform: translate(-50%, -50%) scale(1); } }
+
+        #cursor-singularity.hover-mode .focus-halo { width: 200px; height: 200px; opacity: 0.25; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 30%, var(--dynamic-glow) 70%, transparent 80%); filter: blur(10px); }
+        #cursor-singularity.hover-mode .focus-stardust { opacity: 0; } 
+        #cursor-singularity.hover-mode .normal-orbit { opacity: 0; }
+        
+        .click-particle { position: fixed; width: 4px; height: 4px; border-radius: 50%; pointer-events: none; z-index: 999999; animation: particle-burst 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; mix-blend-mode: screen; }
+        @keyframes particle-burst { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0); opacity: 0; } }
+        #shockwave-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 99980; overflow: hidden; }
+        .shock-ring { position: absolute; border-radius: 50%; border: 2px solid var(--ring-color); box-shadow: 0 0 25px var(--ring-color), inset 0 0 25px var(--ring-color); transform: translate(-50%, -50%) scale(0.1); opacity: 1; mix-blend-mode: screen; animation: shock-expand var(--time) cubic-bezier(0.1, 0.8, 0.2, 1) forwards; }
+        @keyframes shock-expand { 100% { transform: translate(-50%, -50%) scale(5); opacity: 0; border-width: 0; } }
+
+        /* --- 页面排版 --- */
+        .container { width: 100vw; height: 100vh; max-width: 1600px; margin: 0 auto; display: flex; align-items: center; justify-content: center; padding: 3rem; position: relative; z-index: 10; opacity: 0; transform: translateY(30px); transition: opacity 1.5s ease 0.5s, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s; }
+        body.loaded .container { opacity: 1; transform: translateY(0); }
+        body.modal-open .container { transform: scale(0.92) translateZ(-100px) rotateX(-2deg); filter: blur(12px); opacity: 0.15; pointer-events: none; transition: transform 1.0s cubic-bezier(0.22, 1, 0.36, 1), filter 1.0s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease; }
+
+        /* ✨ 布局优化：右侧砍去冗余卡片，改为舒适的纵向比例分布 */
+        .bento-grid { display: grid; grid-template-columns: 4.5fr 5.5fr; gap: 1.5rem; width: 100%; height: 100%; max-height: 850px; transform-style: preserve-3d; margin-top: -6vh; }
+        .left-col { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+        .right-col { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 1.5rem; height: 100%; }
+
+        .card-hitbox { position: relative; width: 100%; height: 100%; perspective: 1200px; z-index: 1; }
+        .hitbox-profile { flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .hitbox-badminton { grid-column: 1 / 3; grid-row: 1 / 2; }
+        .hitbox-photo { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .hitbox-ai { grid-column: 2 / 3; grid-row: 2 / 3; }
+
+        .font-calligraphy { font-family: "STXingkai", "华文行楷", "Xingkai SC", "KaiTi", "楷体", cursive !important; font-weight: normal !important; }
+        .font-sports { font-family: Impact, "Arial Black", "PingFang SC", sans-serif !important; font-style: italic !important; letter-spacing: 2px !important; }
+        .font-lifestyle { font-family: "Songti SC", "Noto Serif CJK SC", "STSong", serif !important; font-weight: 600 !important; letter-spacing: 2px !important; }
+        .font-ai { font-family: "Courier New", Consolas, "PingFang SC", monospace !important; font-weight: bold !important; letter-spacing: 0px !important; text-transform: uppercase; }
+
+        .hero-header { margin-bottom: 1.5rem; transform: translateZ(50px); pointer-events: none; }
+        h1 { font-size: 5.8rem; margin-bottom: 0.2rem; line-height: 1.1; text-shadow: 0 8px 25px rgba(0,0,0,1), 0 0 45px rgba(255, 255, 255, 0.5); color: var(--text-main); }
+        .subtitle { font-size: 1.1rem; color: var(--accent-gold); letter-spacing: 6px; text-transform: uppercase; font-weight: 600; text-shadow: 0 0 15px rgba(230,194,69,0.4); margin-left: 0.5rem;}
+
+        .bento-card { width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%); backdrop-filter: blur(30px) saturate(150%); border-radius: 20px; padding: 2rem; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: -8px 15px 30px rgba(0, 0, 0, 0.8), inset 1px 1px 2px rgba(255, 255, 255, 0.15), inset -1px -1px 3px rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.08); border-top: 1px solid rgba(255,255,255,0.25); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease, border-color 0.4s ease, background 0.4s ease; transform-style: preserve-3d; will-change: transform; pointer-events: none; }
+        .card-hitbox.is-hovered .bento-card { transition: transform 0.15s ease-out, box-shadow 0.4s ease, border-color 0.4s ease, background 0.4s ease; background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%); box-shadow: -10px 20px 40px rgba(0, 0, 0, 0.9), 0 0 35px var(--dynamic-glow), inset 0 0 25px var(--dynamic-glow); border-color: var(--dynamic-glow); z-index: 10; }
+        .bento-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.0) 100%); z-index: -1; pointer-events: none; border-radius: inherit; }
+        .card-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle 800px at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.15) 0%, transparent 80%); pointer-events: none; opacity: 0; transition: opacity 0.4s; z-index: 5; mix-blend-mode: screen; }
+        .card-hitbox.is-hovered .card-glare { opacity: 1; }
+        .magnetic-wrap { display: inline-block; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); transform-style: preserve-3d; pointer-events: none;} 
+        .card-hitbox.is-hovered .magnetic-wrap { transition: transform 0.15s ease-out; }
+        
+        .card-tag { font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.0rem; font-weight: 700; transition: color 0.4s ease; text-shadow: 0 0 10px rgba(230,194,69,0.3); transform: translateZ(20px); pointer-events: none;}
+        .card-hitbox.is-hovered .card-tag { color: var(--dynamic-glow); }
+        .bento-card h3 { font-size: 2.5rem; margin-bottom: 0.8rem; line-height: 1.1; color: var(--text-main); text-shadow: 0 4px 15px rgba(0,0,0,1), 0 0 20px rgba(255,255,255,0.2); transform: translateZ(40px); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); pointer-events: none; }
+        h3.font-calligraphy { font-size: 2.8rem; }
+        h3.font-ai { font-size: 1.9rem; }
+        .card-hitbox.is-hovered h3 { transition: transform 0.15s ease-out; }
+        .bento-card p { color: var(--text-muted); font-size: 0.95rem; flex-grow: 1; font-weight: 400; line-height: 1.7; text-shadow: 0 2px 4px rgba(0,0,0,1); transform: translateZ(25px); margin-bottom: 0.5rem; pointer-events: none;}
+        
+        .pill-container { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.2rem; margin-bottom: 1.2rem; transform: translateZ(30px); transform-style: preserve-3d; pointer-events: none;}
+        .pill { position: relative; padding: 6px 14px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.15); border-radius: 30px; font-size: 0.85rem; color: #fff; letter-spacing: 1px; backdrop-filter: blur(10px); display: flex; align-items: center; gap: 6px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-weight: 600; box-shadow: 2px 4px 10px rgba(0,0,0,0.5); transform: translateZ(10px); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); overflow: hidden; }
+        .pill::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transform: skewX(-20deg); transition: none; }
+        .card-hitbox.is-hovered .pill::after { animation: pill-shimmer 2s infinite ease-in-out; }
+        @keyframes pill-shimmer { 0% { left: -100%; } 100% { left: 200%; } }
+        
+        .click-hint { font-size: 0.85rem; font-weight: 600; letter-spacing: 2px; color: var(--dynamic-glow); opacity: 0.7; transform: translateZ(20px); text-align: left; margin-top: auto; transition: opacity 0.3s, transform 0.6s; pointer-events: none;}
+        .card-hitbox.is-hovered .click-hint { opacity: 1; text-shadow: 0 0 10px var(--dynamic-glow); transition: opacity 0.3s, transform 0.15s ease-out;}
+
+        .card-profile { flex-grow: 1; height: 100%; display: flex; flex-direction: column;}
+        .card-profile .media-showcase { flex-grow: 1; min-height: 250px; margin-top: auto; }
+        .media-showcase { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); position: relative; transform: translateZ(25px); transform-style: preserve-3d; box-shadow: 0 10px 25px rgba(0,0,0,0.9); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .media-showcase img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.6s ease; filter: grayscale(15%) brightness(0.9); position: relative; z-index: 2; transform: translateZ(5px); }
+        .card-hitbox.is-hovered .media-showcase img { transform: translateZ(15px) scale(1.1); filter: grayscale(0%) brightness(1.1); }
+
+        /* ✨ 底部专属联系方式区域 */
+        .creator-contact {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 2rem; align-items: center; justify-content: center;
+            z-index: 10; opacity: 0; animation: fade-in-up 1.5s ease 1s forwards;
+        }
+        @keyframes fade-in-up { 0% { opacity: 0; transform: translate(-50%, 20px); } 100% { opacity: 1; transform: translate(-50%, 0); } }
+        .contact-item {
+            display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.9rem;
+            background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; pointer-events: auto; text-decoration: none;
+        }
+        .contact-item:hover {
+            background: rgba(255,255,255,0.15); color: #fff; border-color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(230,194,69,0.3); transform: translateY(-3px);
+        }
+        .contact-label { font-weight: 600; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; }
+
+        /* ✨ 弹窗 */
+        .modal { visibility: hidden; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(15, 15, 25, 0.5) 0%, rgba(0, 0, 5, 0.85) 100%); backdrop-filter: blur(20px) saturate(120%); z-index: 99990; display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 0; transition: opacity 0.8s ease, visibility 0.8s; perspective: 2000px; }
+        .modal.show { visibility: visible; opacity: 1; pointer-events: auto; }
+        .modal-content { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(40px) saturate(200%); border-radius: 32px; width: 100%; max-width: 900px; padding: 4rem 3.5rem; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 0 1.5px rgba(255,255,255,0.2), inset 0 0 100px var(--modal-glow); overflow: hidden; opacity: 0; transform: scale(0.8) translateZ(-500px) rotateX(25deg); filter: blur(20px); transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.5, 0, 0, 1), filter 0.4s ease; }
+        .modal.show .modal-content { opacity: 1; transform: scale(1) translateZ(0) rotateX(0deg); filter: blur(0); transition: opacity 0.6s ease 0.1s, transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s, filter 0.8s ease 0.1s; }
+        .modal-ambient-bloom { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, var(--modal-glow) 0%, transparent 40%), radial-gradient(circle at 70% 30%, rgba(255,255,255,0.15) 0%, transparent 30%); opacity: 0.45; pointer-events: none; z-index: -1; mix-blend-mode: screen; animation: slow-aurora 15s linear infinite; }
+        @keyframes slow-aurora { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
+        #modal-tag, #modal-title, #modal-desc, #modal-media { opacity: 0; transform: translateY(25px); filter: blur(6px); transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease; }
+        .modal.show #modal-tag   { opacity: 1; transform: translateY(0); filter: blur(0); transition: opacity 0.8s ease 0.4s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s, filter 0.8s ease 0.4s; }
+        .modal.show #modal-title { opacity: 1; transform: translateY(0); filter: blur(0); transition: opacity 0.8s ease 0.5s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s, filter 0.8s ease 0.5s; }
+        .modal.show #modal-desc  { opacity: 1; transform: translateY(0); filter: blur(0); transition: opacity 0.8s ease 0.6s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.6s, filter 0.8s ease 0.6s; }
+        .modal.show #modal-media { opacity: 1; transform: translateY(0); filter: blur(0); transition: opacity 1.0s ease 0.7s, transform 1.0s cubic-bezier(0.16,1,0.3,1) 0.7s, filter 1.0s ease 0.7s; }
+        #modal-tag { display: inline-block !important; padding: 6px 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.0)); border-radius: 30px; border: 1px solid rgba(255,255,255,0.25); color: #fff !important; box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 0 10px var(--modal-glow); letter-spacing: 5px; font-weight: bold; }
+        #modal-title { font-size: 4.2rem !important; letter-spacing: 2px !important; background: linear-gradient(135deg, #ffffff 30%, var(--modal-glow) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 30px rgba(255,255,255,0.2)) drop-shadow(0 2px 5px rgba(0,0,0,0.8)); }
+        #modal-desc { color: #ffffff !important; font-size: 1.1rem !important; font-weight: 400; line-height: 1.8; padding: 1.2rem 1.5rem; margin-top: 1rem; background: linear-gradient(90deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%); border-left: 4px solid var(--modal-glow); border-radius: 4px 16px 16px 4px; }
+        #modal-media { border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.15) !important; box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(255,255,255,0.05) !important; background: rgba(0,0,0,0.6) !important; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative;}
+        .modal-content::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.3; pointer-events: none; z-index: -1; mask-image: radial-gradient(circle at center, black 40%, transparent 80%); }
+        .modal-content::after { content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 20%; background: linear-gradient(to bottom, transparent, var(--modal-glow), transparent); opacity: 0.15; pointer-events: none; z-index: 10; mix-blend-mode: screen; animation: crt-scan 4s linear infinite; }
+        .close-btn { position: absolute; top: 1.5rem; right: 2rem; font-size: 2.8rem; color: #fff; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), color 0.3s, text-shadow 0.3s; z-index: 20; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); pointer-events: auto;}
+        .close-btn:hover { color: var(--modal-glow); text-shadow: 0 0 15px var(--modal-glow); transform: rotate(90deg); }
+        .holo-scanner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, var(--modal-glow) 50%, transparent 60%); background-size: 100% 200%; animation: holo-scan 2.5s infinite linear; opacity: 0.3; pointer-events: none; z-index: 10;}
+        #decode-text { display: inline-block; font-family: monospace; font-size: 1.1rem; transition: text-shadow 0.1s; padding: 3rem; color: #fff !important; }
+        #decode-text.glitching { text-shadow: 3px 0 0 rgba(255,0,0,0.9), -3px 0 0 rgba(0,255,255,0.9); }
+
+        @media (max-width: 1100px) { 
+            body, html { overflow: auto; height: auto; }
+            .container { height: auto; padding: 5rem 2rem; }
+            .bento-grid { display: flex; flex-direction: column; max-height: none; margin-top: 0; } 
+            .left-col, .right-col { display: flex; flex-direction: column; }
+            .media-showcase { min-height: 200px; }
+            h1 { font-size: 4.5rem;} 
+            .creator-contact { bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="preloader"><div class="singularity"></div></div>
+
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+        <filter id="jupiter-clouds"><feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="4" result="noise" /><feDisplacementMap in="SourceGraphic" in2="noise" scale="15" xChannelSelector="R" yChannelSelector="G" /></filter>
+        <filter id="bh-plasma"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" /><feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G" /></filter>
+    </svg>
+
+    <div id="nebula-base"></div>
+    <div class="nebula-core"></div>
+    <div class="milky-way-band"></div>
+    <div id="ambient-mouse-glow"></div>
+    <canvas id="starfield"></canvas>
+    
+    <div id="meteor-container"></div>
+
+    <div class="jupiter-container">
+        <div class="jupiter-hitbox astro-target" data-astro="jupiter">
+            <div class="jupiter-wrapper">
+                <div class="captured-orbitals" style="--rz: 10deg;"><div class="orbital-particle" style="--d:0deg; --s:4px; --c:#fff; --r:210px; --t:8s;"></div><div class="orbital-particle" style="--d:120deg; --s:2px; --c:#e6c245; --r:240px; --t:12s;"></div><div class="orbital-particle" style="--d:240deg; --s:3.5px; --c:#fff; --r:190px; --t:9s;"></div></div>
+                <div class="captured-orbitals" style="--rz: -25deg;"><div class="orbital-particle" style="--d:50deg; --s:2px; --c:#87CEFA; --r:260px; --t:15s;"></div><div class="orbital-particle" style="--d:200deg; --s:3px; --c:#fff; --r:230px; --t:10s;"></div></div>
+                <div class="ring-layer ring-back"></div>
+                <div class="jupiter-body">
+                    <div class="jupiter-texture"></div>
+                    <div style="position: absolute; top: 50%; left: -10%; width: 120%; height: 25px; background: rgba(0,0,0,0.8); border-radius: 50%; transform: translateY(-50%); filter: blur(8px); mix-blend-mode: overlay;"></div>
+                </div>
+                <div class="ring-layer ring-front"></div>
+                <div class="jupiter-dust"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="blackhole-container">
+        <div class="bh-hitbox astro-target" data-astro="blackhole">
+            <div class="bh-wrapper">
+                <div class="bh-lens-top"></div>
+                <div class="bh-disk-main"></div>
+                <div class="bh-core-dark"></div>
+                <div class="bh-lens-bottom"></div>
+                <div class="bh-dust"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shockwave-container"></div>
+    
+    <div id="cursor-singularity">
+        <div class="focus-halo"></div> 
+        <div class="focus-stardust"></div> 
+        <div class="focus-core"></div>
+        <div class="normal-orbit">
+            <div class="orbit-star" style="--d: 0deg; --s: 2px; --c: #ffffff; --r: 15px;"></div>
+            <div class="orbit-star" style="--d: 45deg; --s: 1.5px; --c: #e6c245; --r: 22px;"></div>
+            <div class="orbit-star" style="--d: 90deg; --s: 3px; --c: #87CEFA; --r: 18px;"></div>
+            <div class="orbit-star" style="--d: 135deg; --s: 1px; --c: #ffffff; --r: 25px;"></div>
+            <div class="orbit-star" style="--d: 180deg; --s: 2.5px; --c: #e6c245; --r: 16px;"></div>
+            <div class="orbit-star" style="--d: 225deg; --s: 2px; --c: #87CEFA; --r: 20px;"></div>
+            <div class="orbit-star" style="--d: 270deg; --s: 1.5px; --c: #ffffff; --r: 24px;"></div>
+            <div class="orbit-star" style="--d: 315deg; --s: 3px; --c: #e6c245; --r: 14px;"></div>
+        </div>
+        <div class="normal-orbit reverse">
+            <div class="orbit-star" style="--d: 0deg; --s: 2px; --c: #ffffff; --r: 10px;"></div>
+            <div class="orbit-star" style="--d: 120deg; --s: 1.5px; --c: #87CEFA; --r: 12px;"></div>
+            <div class="orbit-star" style="--d: 240deg; --s: 2px; --c: #e6c245; --r: 11px;"></div>
+        </div>
+    </div>
+
+    <div id="card-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-ambient-bloom"></div>
+            <div class="close-btn interactive" onclick="closeModal()" style="font-weight:100; line-height:1;">&times;</div>
+            <span id="modal-tag" style="font-family: -apple-system, sans-serif;"></span>
+            <h3 id="modal-title"></h3>
+            <p id="modal-desc"></p>
+            <div id="modal-media">
+                <span id="decode-text" style="color:#ffffff; position:relative; z-index:2; font-weight: 600;">[ 影像数据解码中... ]</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="bento-grid">
+            
+            <div class="left-col">
+                <div class="card-hitbox hitbox-profile" data-glow="#e6c245" data-image="images/profile.jpg" onclick="openModal(this, event)">
+                    <div class="bento-card">
+                        <div class="card-glare"></div>
+                        <div class="hero-header">
+                            <h1 class="font-calligraphy">杨铮瑞</h1>
+                            <div class="subtitle">Creator & Explorer</div>
+                        </div>
+                        <div class="card-tag">Profile</div>
+                        <div class="pill-container">
+                            <span class="magnetic-wrap pill-wrap"><div class="pill" style="border-color: rgba(255,255,255,0.4); color: #fff;">🏫 东南大学</div></span>
+                            <span class="magnetic-wrap pill-wrap"><div class="pill">📢 校园大使</div></span>
+                            <span class="magnetic-wrap pill-wrap"><div class="pill">💡 AI 创新实践</div></span>
+                            <span class="magnetic-wrap pill-wrap"><div class="pill">✨ 探索不止</div></span>
+                        </div>
+                        <p>来自东南大学的探索者。保持自律，习惯沉淀，敢于跳出舒适区尝试新鲜事物。无论是深钻技术创新，还是在球场上挥洒汗水，我都力求极致。享受打破常规，将创意化作现实的每个瞬间。</p>
+                        <div class="media-showcase">
+                            <img src="images/profile.jpg" alt="个人风采">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card-hitbox hitbox-badminton" data-glow="#e6c245" data-image="images/badminton.jpg" onclick="openModal(this, event)">
+                    <div class="bento-card">
+                        <div class="card-glare"></div>
+                        <div class="card-tag" style="margin-bottom:0.5rem;">Hobby / Sports</div>
+                        <h3 class="font-sports" style="margin-bottom: 0.2rem;">羽毛球</h3>
+                        <div class="pill-container" style="margin-bottom: 0.5rem;">
+                            <span class="magnetic-wrap pill-wrap"><div class="pill">⚡ 唯快不破</div></span>
+                            <span class="magnetic-wrap pill-wrap"><div class="pill">🏸 纯粹进攻</div></span>
+                        </div>
+                        <p>进攻打法，追求极速与力量压制。</p>
+                        <div class="click-hint">[ 点击进入解码该影像 ]</div>
+                    </div>
+                </div>
+
+                <div class="card-hitbox hitbox-photo" data-glow="#87cefa" data-image="images/photo.jpg" onclick="openModal(this, event)">
+                    <div class="bento-card">
+                        <div class="card-glare"></div>
+                        <div class="card-tag">Lifestyle</div>
+                        <h3 class="font-lifestyle">镜头与烟火气</h3>
+                        <p>捕捉不期而遇的光影与瞬间。</p>
+                        <div class="click-hint">[ 点击进入解码该影像 ]</div>
+                    </div>
+                </div>
+
+                <div class="card-hitbox hitbox-ai" data-glow="#9b4dff" data-image="images/ai-art.jpg" onclick="openModal(this, event)">
+                    <div class="bento-card">
+                        <div class="card-glare"></div>
+                        <div class="card-tag">AI Art</div>
+                        <h3 class="font-ai">AI 艺术探索</h3>
+                        <p>通过提示词咒语，将天马行空的想象力具象化。</p>
+                        <div class="click-hint">[ 点击进入解码该影像 ]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creator-contact">
+        <a href="#" class="contact-item">
+            <span class="contact-label">WeChat</span>
+            <span>YANG0310z</span>
+        </a>
+        <a href="#" class="contact-item">
+            <span class="contact-label">抖音</span>
+            <span>yyyzr0310</span>
+        </a>
+        <a href="https://github.com/yyyzr" target="_blank" class="contact-item">
+            <span class="contact-label">GitHub</span>
+            <span>yyyzr</span>
+        </a>
+    </div>
+
+    <script>
+        const cursorSingularity = document.getElementById('cursor-singularity');
+        const shockwaveContainer = document.getElementById('shockwave-container');
+        const hitboxes = document.querySelectorAll('.card-hitbox');
+        
+        let targetX = window.innerWidth / 2, targetY = window.innerHeight / 2;
+        let isHovering = false; let isExploding = false; let isDrawing = false; let isRepelling = false; 
+
+        let isHoveringAstro = false; 
+        let currentAstro = null; 
+
+        let camRotX = 0, camRotY = 0;
+        let stardustParticles = []; let stars3D = [];
+
+        const astroTargets = document.querySelectorAll('.astro-target');
+        astroTargets.forEach(target => {
+            target.addEventListener('mouseenter', () => { 
+                isHoveringAstro = true;
+                currentAstro = target.getAttribute('data-astro');
+                cursorSingularity.classList.add('in-gravity-field'); 
+            });
+            target.addEventListener('mouseleave', () => { 
+                isHoveringAstro = false; 
+                currentAstro = null;
+                cursorSingularity.classList.remove('in-gravity-field'); 
+            });
+        });
+
+        setTimeout(() => { 
+            document.body.classList.add('loaded'); isExploding = true; 
+            setTimeout(() => {
+                isExploding = false; 
+                const cont = document.querySelector('.container');
+                if(cont) cont.style.transition = 'transform 1.0s cubic-bezier(0.22, 1, 0.36, 1), filter 1.0s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease';
+            }, 1000);
+        }, 100);
+
+        document.addEventListener('mousemove', (e) => { 
+            let dx = e.clientX - targetX; let dy = e.clientY - targetY; let distMoved = Math.hypot(dx, dy);
+            targetX = e.clientX; targetY = e.clientY; 
+            
+            document.documentElement.style.setProperty('--mouse-x', `${targetX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${targetY}px`);
+
+            let cursorRenderX = targetX;
+            let cursorRenderY = targetY;
+
+            if (isHovering && !isHoveringAstro) {
+                const activeCard = document.querySelector('.card-hitbox.is-hovered');
+                if (activeCard) {
+                    const rect = activeCard.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    cursorRenderX = targetX + (cx - targetX) * 0.08;
+                    cursorRenderY = targetY + (cy - targetY) * 0.08;
+                }
+            }
+            
+            // 直接应用坐标，完美贴合
+            cursorSingularity.style.transform = `translate(${cursorRenderX}px, ${cursorRenderY}px)`;
+
+            if (distMoved > 2 && !document.body.classList.contains('modal-open')) {
+                let spawnCount = Math.min(Math.floor(distMoved / 6), 4);
+                const colors = ['#ffffff', '#e6c245', '#87CEFA', '#9b4dff'];
+                for(let i=0; i<spawnCount; i++) {
+                    stardustParticles.push({
+                        x: e.clientX + (Math.random() - 0.5) * 20, y: e.clientY + (Math.random() - 0.5) * 20,
+                        vx: (Math.random() - 0.5) * 0.5 + dx * 0.015, vy: (Math.random() - 0.5) * 0.5 + dy * 0.015,
+                        life: 1.0, size: Math.random() * 2.0 + 0.5, color: colors[Math.floor(Math.random() * colors.length)]
+                    });
+                }
+            }
+
+            const closeBtn = document.querySelector('.close-btn');
+            if (document.body.classList.contains('modal-open') && closeBtn) {
+                const rect = closeBtn.getBoundingClientRect(); const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2;
+                const dxBtn = targetX - cx; const dyBtn = targetY - cy;
+                if (Math.hypot(dxBtn, dyBtn) < 80) { closeBtn.style.transform = `translate(${dxBtn * 0.3}px, ${dyBtn * 0.3}px) scale(1.1)`; } 
+                else { closeBtn.style.transform = 'translate(0, 0) scale(1)'; }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('modal-open')) { closeModal(); } });
+        
+        document.addEventListener('mousedown', (e) => { 
+            if(!e.target.closest('.card-hitbox') && !e.target.closest('.modal-content') && !e.target.closest('.creator-contact')) { 
+                if (e.button === 0) { 
+                    isDrawing = true; cursorSingularity.querySelector('.focus-core').style.transform = 'translate(-50%, -50%) scale(0.5)'; 
+                    const halo = cursorSingularity.querySelector('.focus-halo'); if(halo) { halo.style.transform = 'translate(-50%, -50%) scale(0.6)'; halo.style.opacity = '1'; }
+                    let color = document.documentElement.style.getPropertyValue('--dynamic-glow') || '#e6c245'; spawnParticles(targetX, targetY, color, 12, 50); 
+                } else if (e.button === 2) { 
+                    isRepelling = true; const core = cursorSingularity.querySelector('.focus-core'); 
+                    core.style.background = '#ff2a44'; core.style.boxShadow = '0 0 25px #ff2a44'; core.style.transform = 'translate(-50%, -50%) scale(1.8)'; 
+                    const halo = cursorSingularity.querySelector('.focus-halo'); if(halo) { halo.style.background = 'radial-gradient(circle, rgba(255,42,68,0.6) 0%, transparent 70%)'; halo.style.transform = 'translate(-50%, -50%) scale(2.0)'; halo.style.opacity = '0.8'; }
+                    spawnParticles(targetX, targetY, '#ff2a44', 20, 100); 
+                }
+            } 
+        });
+        
+        document.addEventListener('mouseup', (e) => { 
+            if (e.button === 0) { isDrawing = false; cursorSingularity.querySelector('.focus-core').style.transform = 'translate(-50%, -50%)'; const halo = cursorSingularity.querySelector('.focus-halo'); if(halo) { halo.style.transform = 'translate(-50%, -50%) scale(1)'; halo.style.opacity = ''; } } 
+            else if (e.button === 2) { isRepelling = false; const core = cursorSingularity.querySelector('.focus-core'); core.style.background = ''; core.style.boxShadow = ''; core.style.transform = 'translate(-50%, -50%)'; const halo = cursorSingularity.querySelector('.focus-halo'); if(halo) { halo.style.background = ''; halo.style.transform = 'translate(-50%, -50%) scale(1)'; halo.style.opacity = ''; } }
+        });
+        
+        document.addEventListener('contextmenu', e => { if(!e.target.closest('.creator-contact')) e.preventDefault(); }); 
+        document.addEventListener('touchstart', (e) => { 
+            if(!e.target.closest('.card-hitbox') && !e.target.closest('.modal-content') && !e.target.closest('.creator-contact')) { 
+                isDrawing = true; targetX = e.touches[0].clientX; targetY = e.touches[0].clientY; 
+                document.documentElement.style.setProperty('--mouse-x', `${targetX}px`);
+                document.documentElement.style.setProperty('--mouse-y', `${targetY}px`);
+            } 
+        }, {passive: true});
+        document.addEventListener('touchend', () => isDrawing = false);
+
+        function spawnParticles(x, y, color, count, maxDist) {
+            for(let i=0; i<count; i++) {
+                let p = document.createElement('div'); p.className = 'click-particle'; p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.background = color; p.style.boxShadow = `0 0 10px ${color}`;
+                let angle = Math.random() * Math.PI * 2; let dist = 10 + Math.random() * maxDist;
+                p.style.setProperty('--tx', Math.cos(angle)*dist + 'px'); p.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
+                document.body.appendChild(p); setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        hitboxes.forEach(hitbox => {
+            const card = hitbox.querySelector('.bento-card');
+            const glare = card.querySelector('.card-glare'); 
+            const magnetics = card.querySelectorAll('.magnetic-wrap');
+            const themeColor = hitbox.getAttribute('data-glow') || '#e6c245'; 
+            const title = card.querySelector('h3, h1'); 
+            const icon = card.querySelector('.card-icon');
+
+            hitbox.addEventListener('mouseenter', () => {
+                isHovering = true; 
+                hitbox.classList.add('is-hovered');
+                cursorSingularity.classList.add('hover-mode'); 
+                document.documentElement.style.setProperty('--dynamic-glow', themeColor);
+            });
+
+            hitbox.addEventListener('mousemove', (e) => {
+                const rect = hitbox.getBoundingClientRect();
+                const x = e.clientX - rect.left; 
+                const y = e.clientY - rect.top;
+                const xc = rect.width / 2; 
+                const yc = rect.height / 2; 
+                const dx = x - xc; 
+                const dy = y - yc;
+                
+                card.style.transform = `perspective(1200px) rotateY(${dx / 300}deg) rotateX(${-dy / 300}deg) translateZ(10px)`;
+                
+                if(glare) { glare.style.setProperty('--mx', `${x}px`); glare.style.setProperty('--my', `${y}px`); }
+                if(title) title.style.transform = `translateZ(50px) translate(${dx/80}px, ${dy/80}px)`;
+                if(icon) icon.style.transform = `translateZ(60px) translate(${dx/60}px, ${dy/60}px)`;
+
+                magnetics.forEach(m => {
+                    const isPill = m.classList.contains('pill-wrap'); 
+                    const dampen = isPill ? 30 : 20; 
+                    const child = m.firstElementChild;
+                    if(child) {
+                        child.style.transform = `translateZ(30px) translate(${dx/dampen}px, ${dy/dampen}px)`;
+                    }
+                });
+            });
+
+            hitbox.addEventListener('mouseleave', () => {
+                isHovering = false; 
+                hitbox.classList.remove('is-hovered');
+                cursorSingularity.classList.remove('hover-mode'); 
+                document.documentElement.style.setProperty('--dynamic-glow', '#e6c245'); 
+                
+                card.style.transform = `perspective(1200px) rotateY(0deg) rotateX(0deg) translateZ(0px)`; 
+                
+                if(title) title.style.transform = `translateZ(40px)`; if(icon) icon.style.transform = `translateZ(50px)`;
+                magnetics.forEach(m => { const child = m.firstElementChild; if(child) child.style.transform = `translateZ(10px) translate(0,0)`; });
+            });
+        });
+
+        // ✨ JS：你的名字同款流星雨发生器
+        const meteorContainer = document.getElementById('meteor-container');
+        function createMeteor() {
+            const meteor = document.createElement('div'); meteor.className = 'meteor';
+            const depth = Math.random(); 
+            // 随机长度和速度，营造错落感
+            const length = (depth * 200) + 100; 
+            const speed = (1 - depth) * 1.5 + 0.5; 
+            const opacity = depth * 0.8 + 0.4; 
+            const blur = (1 - depth) * 1.5 + 'px'; 
+            // 倾斜角度微调，营造透视感
+            const angle = Math.random() * 15 + 25; 
+            
+            meteor.style.setProperty('--l', `${length}px`); 
+            meteor.style.setProperty('--d', `${angle}deg`); 
+            meteor.style.setProperty('--t', `${speed}s`);
+            meteor.style.setProperty('--op', opacity); 
+            meteor.style.setProperty('--b', blur);
+            
+            const startX = Math.random() * (window.innerWidth * 1.5) + window.innerWidth * 0.2; 
+            const startY = Math.random() * window.innerHeight * 0.5 - 300;
+            const endX = startX - (length * (depth * 5 + 3) + Math.random() * 400); 
+            const endY = startY + (length * (depth * 2 + 1) + Math.random() * 300);
+            
+            meteor.style.setProperty('--sx', `${startX}px`); 
+            meteor.style.setProperty('--sy', `${startY}px`); 
+            meteor.style.setProperty('--ex', `${endX}px`); 
+            meteor.style.setProperty('--ey', `${endY}px`);
+            
+            meteorContainer.appendChild(meteor); 
+            setTimeout(() => { meteor.remove(); }, speed * 1000);
+        }
+        function meteorShower() { 
+            if (Math.random() > 0.4) { 
+                createMeteor(); 
+                if (Math.random() > 0.8) { setTimeout(createMeteor, Math.random() * 200 + 50); } 
+            } 
+            setTimeout(meteorShower, Math.random() * 4000 + 1500); 
+        }
+        meteorShower();
+
+        const modal = document.getElementById('card-modal');
+        let decodeInterval; 
+        
+        function triggerStarBurst() { for(let s of stars3D) { s.vz -= 25; } }
+
+        function openModal(hitbox, e) {
+            if(hitbox.classList.contains('hitbox-github') || hitbox.classList.contains('hitbox-tiktok') || e.target.closest('a')) return;
+            
+            const themeColor = hitbox.getAttribute('data-glow') || '#e6c245'; 
+            document.querySelector('.modal-content').style.setProperty('--modal-glow', themeColor);
+            
+            const cardTitle = hitbox.querySelector('h3, h1');
+            const modalTitleEl = document.getElementById('modal-title');
+            
+            modalTitleEl.className = ''; 
+            if (cardTitle) {
+                modalTitleEl.innerText = cardTitle.innerText;
+                Array.from(cardTitle.classList).forEach(cls => {
+                    if(cls.startsWith('font-')) modalTitleEl.classList.add(cls);
+                });
+                if(!modalTitleEl.className.includes('font-')) modalTitleEl.classList.add('font-calligraphy');
+            } else {
+                modalTitleEl.innerText = "Archive";
+                modalTitleEl.classList.add('font-calligraphy');
+            }
+
+            const tagEl = hitbox.querySelector('.card-tag');
+            document.getElementById('modal-tag').innerText = tagEl ? tagEl.innerText : (cardTitle && cardTitle.innerText.includes('杨铮瑞') ? 'Profile' : 'Archive');
+
+            const descEl = hitbox.querySelector('p');
+            document.getElementById('modal-desc').innerHTML = descEl ? descEl.innerHTML : "";
+            
+            const targetText = "[ 影像数据解码中... ]"; const glitchChars = "01X#%&*<>[]{}"; let iterations = 0;
+            const modalMediaContainer = document.getElementById('modal-media');
+            modalMediaContainer.innerHTML = `<span id="decode-text" class="glitching" style="color:#ffffff; position:relative; z-index:2; font-weight: 600;">[ 影像数据解码中... ]</span>`;
+            const newDecodeSpan = document.getElementById('decode-text');
+
+            clearInterval(decodeInterval);
+
+            setTimeout(() => {
+                decodeInterval = setInterval(() => {
+                    newDecodeSpan.innerText = targetText.split('').map((char, index) => {
+                        if(index < iterations || char === ' ') return targetText[index];
+                        return glitchChars[Math.floor(Math.random() * glitchChars.length)];
+                    }).join('');
+                    
+                    if(iterations >= targetText.length) {
+                        clearInterval(decodeInterval); newDecodeSpan.classList.remove('glitching'); 
+                        const imageUrl = hitbox.getAttribute('data-image');
+                        if (imageUrl) {
+                            setTimeout(() => {
+                                modalMediaContainer.innerHTML = `<div class="holo-scanner"></div><img src="${imageUrl}" style="width: 100%; height: auto; display: block; border-radius: inherit; animation: fadeInImage 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; z-index: 5;" alt="解码影像">`;
+                            }, 200);
+                        } else { newDecodeSpan.innerText = "[ 数据片段缺失 / 无影像源 ]"; }
+                    }
+                    iterations += 1/2; 
+                }, 30);
+            }, 600); 
+
+            let clickX = targetX; let clickY = targetY;
+            for(let i=0; i<3; i++) {
+                setTimeout(() => {
+                    let ring = document.createElement('div'); ring.className = 'shock-ring'; ring.style.left = clickX + 'px'; ring.style.top = clickY + 'px';
+                    ring.style.setProperty('--ring-color', themeColor); ring.style.setProperty('--time', (0.8 + i*0.2) + 's');
+                    shockwaveContainer.appendChild(ring); setTimeout(() => ring.remove(), 1500);
+                }, i * 150);
+            }
+            triggerStarBurst();
+            document.body.classList.add('modal-open'); requestAnimationFrame(() => { modal.classList.add('show'); });
+        }
+        
+        function closeModal() { 
+            modal.classList.remove('show'); document.body.classList.remove('modal-open'); cursorSingularity.classList.remove('hover-mode'); clearInterval(decodeInterval); 
+            const closeBtn = document.querySelector('.close-btn'); if(closeBtn) closeBtn.style.transform = 'translate(0, 0) scale(1)';
+        }
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        /* --- 真实 3D 星轨引擎 (增加引力扰动) --- */
+        const canvas = document.getElementById('starfield'); const ctx = canvas.getContext('2d');
+        let sw, sh; const starColors3D = ['rgba(255, 255, 255, ', 'rgba(255, 235, 195, ', 'rgba(150, 215, 255, ', 'rgba(230, 194, 69, '];
+
+        function initStars3D() {
+            sw = canvas.width = window.innerWidth; sh = canvas.height = window.innerHeight; stars3D = []; 
+            const totalStars = window.innerWidth < 768 ? 600 : 1500; 
+            for (let i = 0; i < totalStars; i++) {
+                stars3D.push({ 
+                    x: (Math.random() - 0.5) * 3000, y: (Math.random() - 0.5) * 3000, z: Math.random() * 2000,
+                    vx: 0, vy: 0, vz: 0,
+                    color: starColors3D[Math.floor(Math.random()*starColors3D.length)], 
+                    baseSize: Math.random() * 1.5 + 0.5, 
+                    twinkleFreq: Math.random() * 0.005 + 0.002, phase: Math.random() * Math.PI * 2,
+                    isNode: i < 80 
+                });
+            }
+        }
+
+        function animate3D() {
+            ctx.clearRect(0,0,sw,sh); 
+            
+            let targetRotX = (targetY - sh/2) * 0.0003; let targetRotY = (targetX - sw/2) * 0.0003;
+            camRotX += (targetRotX - camRotX) * 0.05; camRotY += (targetRotY - camRotY) * 0.05;
+            let cosX = Math.cos(camRotX), sinX = Math.sin(camRotX); let cosY = Math.cos(camRotY), sinY = Math.sin(camRotY);
+            const fov = 700; const now = Date.now(); let renderedNodes = []; let themeColor = document.documentElement.style.getPropertyValue('--dynamic-glow');
+
+            for(let s of stars3D){
+                s.z -= 0.8; s.z += s.vz; s.vz *= 0.9;
+                if(s.z <= 1) s.z = 2000; if(s.z > 2000) s.z = 1;
+                if(isExploding) { s.z -= 15; }
+
+                let rx1 = s.x * cosY - s.z * sinY; let rz1 = s.z * cosY + s.x * sinY;
+                let ry2 = s.y * cosX - rz1 * sinX; let rz2 = rz1 * cosX + s.y * sinX;
+
+                if (rz2 > 10) {
+                    let scale = fov / rz2;
+                    let px = rx1 * scale + sw / 2; let py = ry2 * scale + sh / 2;
+
+                    if (px > -50 && px < sw + 50 && py > -50 && py < sh + 50) {
+                        if (s.isNode) renderedNodes.push({x: px, y: py});
+                        let combinedTwinkle = (Math.sin(now * s.twinkleFreq + s.phase) + 1.0) * 0.5; 
+                        let size = Math.max(0.1, s.baseSize * scale);
+                        let op = Math.max(0.1, Math.min(1.0, combinedTwinkle * (1.5 - rz2/2000)));
+
+                        // 天体引力牵引效果
+                        if(isHoveringAstro && currentAstro) {
+                            const activeHitbox = document.querySelector(`.${currentAstro === 'blackhole' ? 'bh' : 'jupiter'}-hitbox`);
+                            if(activeHitbox) {
+                                const rect = activeHitbox.getBoundingClientRect();
+                                const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2;
+                                const gdx = px - cx; const gdy = py - cy; const dist = Math.hypot(gdx, gdy);
+                                if (dist < 600) {
+                                    const force = (600 - dist) / 50; 
+                                    s.vx -= (gdx / dist) * force * 2; 
+                                    s.vy -= (gdy / dist) * force * 2;
+                                    s.z -= force; 
+                                }
+                            }
+                        }
+
+                        const gdx = px - targetX; const gdy = py - targetY; const dist = Math.hypot(gdx, gdy);
+                        if (!isExploding && !document.body.classList.contains('modal-open') && !isHovering) {
+                            if (isRepelling && dist < 350) { 
+                                const force = (350 - dist) / 30; s.vx += (gdx / dist) * force * 1.5; s.vy += (gdy / dist) * force * 1.5; 
+                            } else if (isDrawing && dist < 400) { 
+                                const force = (400 - dist) / 150; s.vx -= (gdx / dist) * force * 3.5; s.vy -= (gdy / dist) * force * 3.5; 
+                            }
+                        }
+                        
+                        s.x += s.vx; s.y += s.vy; s.vx *= 0.94; s.vy *= 0.94; 
+
+                        ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2);
+                        let distToMouse = Math.hypot(px - targetX, py - targetY);
+                        if (isHovering && themeColor !== '#e6c245' && distToMouse < 150 && !isHoveringAstro) { 
+                            ctx.fillStyle = themeColor; ctx.shadowBlur = 10; ctx.shadowColor = themeColor;
+                        } else { 
+                            ctx.fillStyle = s.color + op + ')'; ctx.shadowBlur = size > 1.5 ? 8 : 0; ctx.shadowColor = s.color + '1)';
+                        }
+                        ctx.fill(); ctx.shadowBlur = 0;
+                    }
+                }
+            }
+            
+            for (let i = stardustParticles.length - 1; i >= 0; i--) {
+                let p = stardustParticles[i];
+                p.x += p.vx; p.y += p.vy; p.vx *= 0.96; p.vy *= 0.96; p.life -= 0.02;
+                if (p.life <= 0) { stardustParticles.splice(i, 1); } 
+                else {
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life);
+                    ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.fill(); ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
+                }
+            }
+
+            if (!document.body.classList.contains('modal-open')) {
+                renderedNodes.push({x: targetX, y: targetY, isMouse: true}); 
+                ctx.lineWidth = 0.8; let trailR = 255, trailG = 255, trailB = 255;
+                if(themeColor.includes('#fe2c55')) { trailR=254; trailG=44; trailB=85; } else if(themeColor.includes('#ff2a44')) { trailR=255; trailG=42; trailB=68; } else if(themeColor.includes('#8a2be2')) { trailR=155; trailG=77; trailB=255; } else if(themeColor.includes('#888888')) { trailR=180; trailG=180; trailB=180; } else { trailR=230; trailG=194; trailB=69; }
+                
+                for(let i=0; i<renderedNodes.length; i++) {
+                    for(let j=i+1; j<renderedNodes.length; j++) {
+                        let d = Math.hypot(renderedNodes[i].x - renderedNodes[j].x, renderedNodes[i].y - renderedNodes[j].y);
+                        let threshold = (renderedNodes[i].isMouse || renderedNodes[j].isMouse) ? 150 : 80;
+                        if(d < threshold) {
+                            ctx.beginPath(); ctx.moveTo(renderedNodes[i].x, renderedNodes[i].y); ctx.lineTo(renderedNodes[j].x, renderedNodes[j].y);
+                            let alpha = 0.5 * (1 - d/threshold); if (isDrawing && (renderedNodes[i].isMouse || renderedNodes[j].isMouse)) alpha *= 2; 
+                            ctx.strokeStyle = `rgba(${trailR}, ${trailG}, ${trailB}, ${alpha})`; ctx.stroke();
+                        }
+                    }
+                }
+                if (isDrawing && !isHoveringAstro) { ctx.beginPath(); ctx.arc(targetX, targetY, 3, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.shadowBlur = 25; ctx.shadowColor = `rgb(${trailR}, ${trailG}, ${trailB})`; ctx.fill(); ctx.shadowBlur = 0; }
+            }
+            requestAnimationFrame(animate3D);
+        }
+        initStars3D(); animate3D(); window.addEventListener('resize', initStars3D);
+
+        // ✨ JS：生成尘埃粒子
+        function initAstroDust() {
+            const jupiterDustContainer = document.querySelector('.jupiter-dust');
+            for (let i = 0; i < 50; i++) {
+                let p = document.createElement('div');
+                p.className = 'jupiter-dust-particle';
+                let radius = 160 + Math.random() * 80;
+                let duration = 6 + Math.random() * 10;
+                p.style.setProperty('--r', radius + 'px');
+                p.style.setProperty('--t', duration + 's');
+                p.style.setProperty('--d', Math.random() * 360 + 'deg');
+                p.style.setProperty('--y', (Math.random() - 0.5) * 40 + 'deg');
+                jupiterDustContainer.appendChild(p);
+            }
+
+            const bhDustContainer = document.querySelector('.bh-dust');
+            for (let i = 0; i < 60; i++) {
+                let p = document.createElement('div');
+                p.className = 'bh-dust-particle';
+                let radius = 120 + Math.random() * 180;
+                let duration = 4 + Math.random() * 5;
+                p.style.setProperty('--r', radius + 'px');
+                p.style.setProperty('--t', duration + 's');
+                p.style.setProperty('--d', Math.random() * 360 + 'deg');
+                bhDustContainer.appendChild(p);
+            }
+        }
+        initAstroDust();
+    </script>
+</body>
+</html>
